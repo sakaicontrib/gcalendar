@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+
+<registration>
+
+	<tool
+			id="sakai.gcalendar"
+			title="GCalendar"
+			description="Google Calendar">
+			
+		<category name="course" />
+		<category name="project" />
+		<category name="myworkspace" />
+	</tool>
+
+</registration>

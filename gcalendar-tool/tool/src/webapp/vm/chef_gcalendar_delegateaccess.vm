@@ -1,0 +1,200 @@
+## $Header: /cvs/sakai2/legacy/tools/src/webapp/vm/admin/chef_aliases_list.vm,v 1.2 2005/05/19 19:53:01 gsilver.umich.edu Exp $
+
+<link rel='stylesheet' type='text/css' href='/library/fullcalendar/cupertino/theme.css' />
+<link rel='stylesheet' type='text/css' href='/library/fullcalendar/fullcalendar.css' />
+<link rel='stylesheet' type='text/css' href='/library/fullcalendar/fullcalendar.print.css' media='print' />
+<link rel='stylesheet' type='text/css' href='/library/js/jquery/ui/1.8.4/css/ui-lightness/jquery-ui-1.8.4.full.css'/>
+<script type='text/javascript' src='/library/fullcalendar/js/jquery/1.7.1/jquery-1.7.1.min.js'></script>
+<script type='text/javascript' src='/library/fullcalendar/js/jquery-ui-latest/js/jquery-ui-1.8.17.custom.min.js'></script>
+<script type='text/javascript' src='/library/fullcalendar/fullcalendar.min.js'></script>
+<script type='text/javascript' src='/library/js/jquery/ui/1.8.4/jquery-ui-1.8.4.full.min.js'></script> ## 7/30/13 - TODO: confused drag and drop - but needed for creating event dialog!
+
+<script type='text/javascript' src='/sakai-gcalendar-tool/js/gcalendar.js'></script>
+
+<div class="portletBody">
+	<h3>
+		$tlang.getString("gcal.title")
+	</h3>
+	<textarea id="accesstoken" style="visibility:hidden; display:none;">$accesstoken</textarea>
+	<textarea id="gcalid" style="visibility:hidden; display:none;">$gcalid</textarea>
+	<textarea id="editAllowed" style="visibility:hidden; display:none;">$editAllowed</textarea>
+	
+	<br>
+	<br>
+	
+##full calendar
+<script type='text/javascript'>
+	var accesstoken = '${accesstoken}';
+	var gcalid = '${gcalid}';
+	var editAllowed = '${editAllowed}';
+	
+	$(document).ready(function() {
+	
+		getGoogleCalendar(accesstoken, gcalid);
+		
+	});
+
+</script>
+
+<style type='text/css'>
+
+	body {
+		text-align: left;
+		font-size: 14px;
+		font-family: "Lucida Grande",Helvetica,Arial,Verdana,sans-serif;
+		}
+		
+	#loading {
+		position: absolute;
+		top: 5px;
+		}
+
+	#calendar {
+		width: 1100px;
+		margin-left:0cm;
+		}
+
+</style>
+<body>
+<div id='loading' style='display:none'></div>
+<div id='calendar'></div>
+
+<div class="newEventTemplate" style="display:none">
+	<p>$tlang.getString("gcal.event.date") <span class="newEventDate"></span></p>
+	<p><label for="newEventTitle">$tlang.getString("gcal.event.title") </label><input type="text" class="newEventTitle"/></p>
+	<p><label for="newEventAllDay">$tlang.getString("gcal.event.allday") </label><input type="checkbox" checked="checked" class="newEventAllDay"/></p>
+	<div class="newEventTimeClass">
+		<table>
+			<tr>
+				<td>
+					<label for="newEventStartTime" style="vertical-align:top">$tlang.getString("gcal.event.start") </label>
+				</td>
+				<td style="width: 90px">
+					<input type="text" class="newEventStartTimeText" size="7"/>
+					<input type="hidden" class="newEventStartTimeValue" size="7"/>				
+				</td>
+				<td>
+					<label for="newEventEndTime" style="vertical-align:top">$tlang.getString("gcal.event.end") </label>
+				</td>
+				<td style="width: 90px">
+					<input type="text" class="newEventEndTimeText" size="7"/>
+					<input type="hidden" class="newEventEndTimeValue" size="7"/>
+				</td>
+			</tr>	
+			<tr>		
+				<td></td>
+				<td>	
+					<select size="7" class="newEventStartTimeSelect" style="display:none"/>
+						<option value="00:00">12:00am</option>
+				  		<option value="00:30">12:30am</option>
+						<option value="01:00">1:00am</option>
+						<option value="01:30">1:30am</option>
+						<option value="02:00">2:00am</option>
+						<option value="02:30">2:30am</option>
+						<option value="03:00">3:00am</option>
+						<option value="03:30">3:30am</option>
+						<option value="04:00">4:00am</option>
+				    	<option value="04:30">4:30am</option>
+				    	<option value="05:00">5:00am</option>
+				    	<option value="05:30">5:30am</option>
+				    	<option value="06:00">6:00am</option>
+				    	<option value="06:30">6:30am</option>
+				    	<option value="07:00">7:00am</option>
+				    	<option value="07:30">7:30am</option>
+				    	<option value="08:00">8:00am</option>
+				    	<option value="08:30">8:30am</option>
+				    	<option value="09:00">9:00am</option>
+				    	<option value="09:30">9:30am</option>
+				    	<option value="10:00">10:00am</option>
+				    	<option value="10:30">10:30am</option>
+				    	<option value="11:00">11:00am</option>
+				    	<option value="11:30">11:30am</option>
+				    	<option value="12:00">12:00pm</option>
+				    	<option value="12:30">12:30pm</option>
+				    	<option value="13:00">1:00pm</option>
+				    	<option value="13:30">1:30pm</option>
+				    	<option value="14:00">2:00pm</option>
+				    	<option value="14:30">2:30pm</option>
+				    	<option value="15:00">3:00pm</option>
+				    	<option value="15:30">3:30pm</option>
+				    	<option value="16:00">4:00pm</option>
+				    	<option value="16:30">4:30pm</option>
+				    	<option value="17:00">5:00pm</option>
+				    	<option value="17:30">5:30pm</option>
+				    	<option value="18:00">6:00pm</option>
+				    	<option value="18:30">6:30pm</option>
+				    	<option value="19:00">7:00pm</option>
+				    	<option value="19:30">7:30pm</option>
+				    	<option value="20:00">8:00pm</option>
+				    	<option value="20:30">8:30pm</option>
+				    	<option value="21:00">9:00pm</option>
+				    	<option value="21:30">9:30pm</option>
+				    	<option value="22:00">10:00pm</option>
+				    	<option value="22:30">10:30pm</option>
+				    	<option value="23:00">11:00pm</option>
+				    	<option value="23:30">11:30pm</option>
+					</select>
+				</td>
+				<td></td>
+				<td>
+					<select size="7" class="newEventEndTimeSelect" style="display:none"/>
+						<option value="00:00">12:00am</option>
+			  			<option value="00:30">12:30am</option>
+			  			<option value="01:00">1:00am</option>
+			  			<option value="01:30">1:30am</option>
+			  			<option value="02:00">2:00am</option>
+			  			<option value="02:30">2:30am</option>
+			  			<option value="03:00">3:00am</option>
+			  			<option value="03:30">3:30am</option>
+			  			<option value="04:00">4:00am</option>
+			  			<option value="04:30">4:30am</option>
+			  			<option value="05:00">5:00am</option>
+			  			<option value="05:30">5:30am</option>
+			  			<option value="06:00">6:00am</option>
+			  			<option value="06:30">6:30am</option>
+			  			<option value="07:00">7:00am</option>
+			  			<option value="07:30">7:30am</option>
+			  			<option value="08:00">8:00am</option>
+			  			<option value="08:30">8:30am</option>
+			  			<option value="09:00">9:00am</option>
+			  			<option value="09:30">9:30am</option>
+			  			<option value="10:00">10:00am</option>
+			  			<option value="10:30">10:30am</option>
+			  			<option value="11:00">11:00am</option>
+			  			<option value="11:30">11:30am</option>
+			  			<option value="12:00">12:00pm</option>
+			  			<option value="12:30">12:30pm</option>
+			  			<option value="13:00">1:00pm</option>
+			  			<option value="13:30">1:30pm</option>
+			  			<option value="14:00">2:00pm</option>
+			  			<option value="14:30">2:30pm</option>
+			  			<option value="15:00">3:00pm</option>
+			  			<option value="15:30">3:30pm</option>
+			  			<option value="16:00">4:00pm</option>
+			  			<option value="16:30">4:30pm</option>
+			  			<option value="17:00">5:00pm</option>
+			  			<option value="17:30">5:30pm</option>
+			  			<option value="18:00">6:00pm</option>
+			  			<option value="18:30">6:30pm</option>
+			  			<option value="19:00">7:00pm</option>
+			  			<option value="19:30">7:30pm</option>
+			  			<option value="20:00">8:00pm</option>
+			  			<option value="20:30">8:30pm</option>
+			  			<option value="21:00">9:00pm</option>
+			  			<option value="21:30">9:30pm</option>
+			  			<option value="22:00">10:00pm</option>
+			  			<option value="22:30">10:30pm</option>
+			  			<option value="23:00">11:00pm</option>
+			  			<option value="23:30">11:30pm</option>
+					</select>
+				</td>
+			</tr>
+		</table>	
+	</div>
+	<p><input type="button" class="newEventSave" value='$tlang.getString("gcal.event.create")'></p>
+</div>
+
+<p>$tlang.getString("gcal.shareCalendar")<a href="$googlelink" target="_blank"> $googlelink</a></p>
+
+</body>
+</div>

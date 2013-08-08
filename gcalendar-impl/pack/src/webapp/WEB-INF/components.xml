@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+
+<beans>
+
+	<bean id="org.sakaiproject.gcalendar.api.SakaiGCalendarService"
+                        class="org.sakaiproject.gcalendar.impl.SakaiGCalendarServiceImpl"
+                        init-method="init"
+                        destroy-method="destroy"
+                        singleton="true">
+                        
+        <property name="entityManager"><ref bean="org.sakaiproject.entity.api.EntityManager"/></property>
+        <property name="siteService"><ref bean="org.sakaiproject.site.api.SiteService"/></property>
+        <property name="serverConfigurationService"><ref bean="org.sakaiproject.component.api.ServerConfigurationService"/></property>
+        <property name="preferencesService"><ref bean="org.sakaiproject.user.api.PreferencesService"/></property>
+        
+	</bean>
+	
+</beans>
