@@ -11,6 +11,8 @@ import java.util.Vector;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.sakaiproject.authz.api.FunctionManager;
+import org.sakaiproject.authz.api.SecurityService;
 import org.sakaiproject.component.api.ServerConfigurationService;
 import org.sakaiproject.entity.api.ContextObserver;
 import org.sakaiproject.entity.api.Entity;
@@ -75,9 +77,9 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 	/** The string that Google Calendar uses for preferences */
 	private static final String GOOGLE_CALENDAR_PREFS = "sakai:google:calendar";
 	
-	/** The string that current user is in acl */
-	private static final String USER_IN_ACL = "userInAcl";
-
+	/** The string for "gcalid" */
+	private static final String PROPERTY_GCALID = "gcalid";
+	
 	/** Global instance of the HTTP transport. */
 	private static final HttpTransport HTTP_TRANSPORT = new NetHttpTransport();
 
@@ -91,12 +93,16 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 	/** Service account private key */
 	private static String PRIVATE_KEY = null;
 	
-	private static String RULE_ROLE_READER = "reader";
-	private static String RULE_ROLE_OWNER = "owner";
-	private static String RULE_SCOPE_TYPE_USER = "user"; //  Limits the scope to a single user.
+	private FunctionManager functionManager;
+	public void setFunctionManager(FunctionManager functionManager) {
+		this.functionManager = functionManager;
+	}
 	
-	private static final String INSTRUCTOR_ROLE = "Instructor";
-	
+	protected SecurityService securityService;
+	public void setSecurityService(SecurityService securityService) {
+		this.securityService = securityService;
+		//super.setSecurityService(securityService);
+	}
 	/** Authorizes the service account to access user's protected data. */
 	public GoogleCredential getGoogleCredential(String userid) throws Exception {		
 		
@@ -172,7 +178,7 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 		// if the Google Calendar already created and the Google Calendar Id already saved in the site property
 		// return true
 		// else, create the calendar in google.
-		if (site.getProperties().getProperty("gcalid") != null) { 
+		if (site.getProperties().getProperty(PROPERTY_GCALID) != null) { 
 			M_log.debug(this + " checkGCalendarExists - Google calendar exists via getProperty did not return null");
 			return true;
 		} else {
@@ -263,7 +269,7 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 			}
 
 			// add gcalid as the Sakai site property
-			site.getPropertiesEdit().addProperty("gcalid", gcalid);
+			site.getPropertiesEdit().addProperty(PROPERTY_GCALID, gcalid);
 
 			// save the site
 			m_siteService.save(site);
@@ -340,7 +346,7 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 
 		return createdCalendar;
 	}
-
+	
 	/**
 	 * get google calendar access token for a Sakai site.
 	 * 
@@ -429,11 +435,11 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 	 * @param Site
 	 *        
 	 */
-    public void addUserToAccessControlList(Site site) {
+    public void addUserToAccessControlList(Site site, String permission) {
     	M_log.debug(" begin addUserToAccessControlList");
     	
-    	boolean isInstructor = false;
-    	String gcalid = site.getProperties().getProperty("gcalid");
+    	//boolean isInstructor = false;
+    	String gcalid = site.getProperties().getProperty(PROPERTY_GCALID);
     	User currentUser = UserDirectoryService.getCurrentUser();
     	String currentUserId = currentUser.getId();
     	
@@ -443,12 +449,13 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
     	
 		// if the current user is a valid user in the site
 		// and if the current user is not in google calendar acl (access control list)
+		// OR if their permissions have changed
 		// add the current user to the google calendar acl (access control list)
-		// or if they are an Owner or an Instructor
 		
 		M_log.debug("addUserToAccessControlList: site.getMember(currentUserId) " + site.getMember(currentUserId));
 		M_log.debug("addUserToAccessControlList: googleCalendarPrefPropValue " + googleCalendarPrefPropValue);
-		if (site.getMember(currentUserId) != null && googleCalendarPrefPropValue == null ) {
+		
+		if (site.getMember(currentUserId) != null && ( googleCalendarPrefPropValue == null || !googleCalendarPrefPropValue.equalsIgnoreCase(permission) ) ) {
 			
 			// Site creator 
 			String siteCreatorEmailAddress = site.getCreatedBy().getEmail();
@@ -460,28 +467,7 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 			}
 			else {
 				M_log.debug("addUserToAccessControlList: siteCreatorEmailAddress " + siteCreatorEmailAddress);
-				
-				// Start temporary HACK to see if the user is an Instructor
-				// Check if user has the Instructor role in this site
-				try {
-					AuthzGroup realm = AuthzGroupService.getAuthzGroup(site.getReference());
-					String usrRole = realm.getMember( currentUserId ).getRole().getId();
-					M_log.debug("User is " + currentUserId + " role is: " + usrRole );
-					if ( usrRole != null && !usrRole.isEmpty() && usrRole.equals(INSTRUCTOR_ROLE))
-					{
-						// user is an instructor!
-						M_log.debug("User is an istructor: " + currentUserId + " " + usrRole );
-						isInstructor = true;
-					}
-				}
-				catch (GroupNotDefinedException e)
-				{
-					M_log.error("Realm not found: " /* + id - TODO: fill this in */);
-	
-					//addAlert(state, rb.getFormattedMessage("realm.notfound", new Object[]{id}));
-				}
-				// End temporary HACK for Instructor
-				
+
 				// Create ACL using site creator email
 				try {
 					GoogleCredential credential = getGoogleCredential(siteCreatorEmailAddress);
@@ -500,11 +486,24 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 					scope.setType(RULE_SCOPE_TYPE_USER);
 					scope.setValue(currentUserEmailAddress);
 					rule.setScope(scope);
-					if ( isInstructor ) 
-						rule.setRole(RULE_ROLE_OWNER); // Instructor
-					else
-						rule.setRole(RULE_ROLE_READER); // Other folks
-							
+					
+					// Determine Google calendar permissions based on Sakai permissions
+					if ( permission.equalsIgnoreCase(GCAL_ADMIN)) {
+						rule.setRole(RULE_ROLE_OWNER);
+					}
+					else if ( permission.equalsIgnoreCase(GCAL_EDIT)) {
+						rule.setRole(RULE_ROLE_WRITER);
+					}
+					else if ( permission.equalsIgnoreCase(GCAL_VIEW_ALL)) {
+						rule.setRole(RULE_ROLE_READER);
+					}
+					else if ( permission.equalsIgnoreCase(GCAL_VIEW)) {
+						rule.setRole(RULE_ROLE_FREEBUSYREADER);
+					}
+					else {
+						rule.setRole(RULE_ROLE_READER); // The default for non-google users?
+					}
+					
 					AclRule createdRule = client.acl().insert(gcalid, rule).execute();
 		
 				} catch (UserNotDefinedException e) {
@@ -519,7 +518,7 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 				}
 	
 				// Save gcalid in user preferences (so we know the user has been added to the google calendar ACL)		
-				saveGCalProperty(currentUserId, gcalid);
+				saveGCalProperty(currentUserId, gcalid, permission);
 	    	}
 		}
 		M_log.debug(" end addUserToAccessControlList");
@@ -557,11 +556,11 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 	/**
 	 * Save google calendar id in user preferences
 	 */
-	private void saveGCalProperty(String currentUserId, String gcalid) {
+	private void saveGCalProperty(String currentUserId, String gcalid, String perm) {
 		PreferencesEdit m_edit = setUserEditingOn(currentUserId);
 		
 		ResourcePropertiesEdit props = m_edit.getPropertiesEdit( GOOGLE_CALENDAR_PREFS );
-		props.addProperty(gcalid, USER_IN_ACL);
+		props.addProperty(gcalid, perm); // Save the permission to see if it changes the next time they sign in
 		
 		m_preferencesService.commit(m_edit);
 	}
@@ -715,6 +714,16 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 	}
 
 	/**
+	 * Dependency: SecurityService.
+	 * 
+	 * @param service
+	 *            The SecurityService.
+	 */
+	//public void setSecurityService(SecurityService securityService) {
+	//	this.securityService = securityService;
+		//super.setSecurityService(securityService);
+	//}
+	/**
 	 * Dependency: ServerConfigurationService.
 	 * 
 	 * @param service
@@ -739,9 +748,15 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 	 */
 	public void init() {
 		M_log.info("initialization...");
-
+		
 		// register as an entity producer
 		m_entityManager.registerEntityProducer(this, REFERENCE_ROOT);
+		
+		// register functions
+		functionManager.registerFunction(GCAL_VIEW);
+		functionManager.registerFunction(GCAL_VIEW_ALL);
+		functionManager.registerFunction(GCAL_EDIT);
+		functionManager.registerFunction(GCAL_ADMIN);
 	}
 
 	/**
