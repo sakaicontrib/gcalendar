@@ -24,7 +24,7 @@ package org.sakaiproject.gcalendar.cover;
 import org.sakaiproject.component.cover.ComponentManager;
 import org.sakaiproject.site.api.Site;
 
-public class SakaiGCalendarService {
+public class SakaiGCalendarService    {
 	private static org.sakaiproject.gcalendar.api.SakaiGCalendarService m_instance = null;
 
 	/**
@@ -95,13 +95,13 @@ public class SakaiGCalendarService {
 	 * @param Site
 	 *        
 	 */
-	public static void addUserToAccessControlList(Site site) {
+	public static void addUserToAccessControlList(Site site, String perm) {
 		org.sakaiproject.gcalendar.api.SakaiGCalendarService service = getInstance();
 		if (service == null) {
 			return;
 		}
 		
-		service.addUserToAccessControlList(site);
+		service.addUserToAccessControlList(site, perm);
 	}
 	
 }
