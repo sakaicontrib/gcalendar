@@ -26,6 +26,7 @@ import org.sakaiproject.exception.InUseException;
 import org.sakaiproject.exception.PermissionException;
 import org.sakaiproject.gcalendar.api.SakaiGCalendarService;
 import org.sakaiproject.google.impl.SakaiGoogleAuthServiceImpl;
+import org.sakaiproject.gcalendar.api.SakaiGCalendarServiceStaticVariables;
 
 import org.sakaiproject.site.api.Site;
 import org.sakaiproject.site.api.SiteService;
@@ -483,25 +484,25 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 					AclRule rule = new AclRule();
 					Scope scope = new Scope();
 		
-					scope.setType(RULE_SCOPE_TYPE_USER);
+					scope.setType(SakaiGCalendarServiceStaticVariables.RULE_SCOPE_TYPE_USER);
 					scope.setValue(currentUserEmailAddress);
 					rule.setScope(scope);
 					
 					// Determine Google calendar permissions based on Sakai permissions
-					if ( permission.equalsIgnoreCase(GCAL_ADMIN)) {
-						rule.setRole(RULE_ROLE_OWNER);
+					if ( permission.equalsIgnoreCase(SakaiGCalendarServiceStaticVariables.GCAL_ADMIN)) {
+						rule.setRole(SakaiGCalendarServiceStaticVariables.RULE_ROLE_OWNER);
 					}
-					else if ( permission.equalsIgnoreCase(GCAL_EDIT)) {
-						rule.setRole(RULE_ROLE_WRITER);
+					else if ( permission.equalsIgnoreCase(SakaiGCalendarServiceStaticVariables.GCAL_EDIT)) {
+						rule.setRole(SakaiGCalendarServiceStaticVariables.RULE_ROLE_WRITER);
 					}
-					else if ( permission.equalsIgnoreCase(GCAL_VIEW_ALL)) {
-						rule.setRole(RULE_ROLE_READER);
+					else if ( permission.equalsIgnoreCase(SakaiGCalendarServiceStaticVariables.GCAL_VIEW_ALL)) {
+						rule.setRole(SakaiGCalendarServiceStaticVariables.RULE_ROLE_READER);
 					}
-					else if ( permission.equalsIgnoreCase(GCAL_VIEW)) {
-						rule.setRole(RULE_ROLE_FREEBUSYREADER);
+					else if ( permission.equalsIgnoreCase(SakaiGCalendarServiceStaticVariables.GCAL_VIEW)) {
+						rule.setRole(SakaiGCalendarServiceStaticVariables.RULE_ROLE_FREEBUSYREADER);
 					}
 					else {
-						rule.setRole(RULE_ROLE_READER); // The default for non-google users?
+						rule.setRole(SakaiGCalendarServiceStaticVariables.RULE_ROLE_READER); // The default for non-google users?
 					}
 					
 					AclRule createdRule = client.acl().insert(gcalid, rule).execute();
@@ -750,13 +751,13 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 		M_log.info("initialization...");
 		
 		// register as an entity producer
-		m_entityManager.registerEntityProducer(this, REFERENCE_ROOT);
+		m_entityManager.registerEntityProducer(this, SakaiGCalendarServiceStaticVariables.REFERENCE_ROOT);
 		
 		// register functions
-		functionManager.registerFunction(GCAL_VIEW);
-		functionManager.registerFunction(GCAL_VIEW_ALL);
-		functionManager.registerFunction(GCAL_EDIT);
-		functionManager.registerFunction(GCAL_ADMIN);
+		functionManager.registerFunction(SakaiGCalendarServiceStaticVariables.GCAL_VIEW);
+		functionManager.registerFunction(SakaiGCalendarServiceStaticVariables.GCAL_VIEW_ALL);
+		functionManager.registerFunction(SakaiGCalendarServiceStaticVariables.GCAL_EDIT);
+		functionManager.registerFunction(SakaiGCalendarServiceStaticVariables.GCAL_ADMIN);
 	}
 
 	/**
