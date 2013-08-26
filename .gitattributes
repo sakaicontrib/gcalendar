@@ -1,5 +1,6 @@
 * text=auto !eol
 gcalendar-api/api/src/java/org/sakaiproject/gcalendar/api/SakaiGCalendarService.java -text
+gcalendar-api/api/src/java/org/sakaiproject/gcalendar/api/SakaiGCalendarServiceStaticVariables.java -text svneol=unset#text/plain
 gcalendar-api/api/src/java/org/sakaiproject/gcalendar/cover/SakaiGCalendarService.java -text
 gcalendar-impl/impl/src/java/org/sakaiproject/gcalendar/impl/SakaiGCalendarServiceImpl.java -text
 gcalendar-tool/tool/src/bundle/permissions.properties -text svneol=unset#text/plain
