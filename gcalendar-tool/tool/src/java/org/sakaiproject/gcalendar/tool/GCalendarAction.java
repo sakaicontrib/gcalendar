@@ -13,7 +13,9 @@ import org.sakaiproject.cheftool.RunData;
 import org.sakaiproject.cheftool.VelocityPortlet;
 import org.sakaiproject.event.api.SessionState;
 import org.sakaiproject.exception.IdUnusedException;
+import org.sakaiproject.gcalendar.api.SakaiGCalendarServiceStaticVariables;
 import org.sakaiproject.gcalendar.cover.SakaiGCalendarService;
+import org.sakaiproject.gcalendar.api.SakaiGCalendarServiceStaticVariables;
 import org.sakaiproject.site.api.Site;
 import org.sakaiproject.site.cover.SiteService;
 import org.sakaiproject.tool.cover.ToolManager;
@@ -38,12 +40,6 @@ import org.sakaiproject.component.cover.ComponentManager;
 public class GCalendarAction extends PagedResourceActionII
 {
 	private static final long serialVersionUID = -5477742481219305334L;
-	
-	// These belong elsewhere - like in API
-	public static final String GCAL_VIEW = "gcal.view";
-	public static final String GCAL_VIEW_ALL = "gcal.view.all";
-	public static final String GCAL_EDIT = "gcal.edit";
-	public static final String GCAL_ADMIN = "gcal.admin";
 	
 	private String saved_gcalid = null;
 	
@@ -112,7 +108,7 @@ public class GCalendarAction extends PagedResourceActionII
 		String accessToken = null;
 		boolean editAllowed = false;
 		boolean hasGoogleAccount = true;
-		String permission = GCAL_VIEW;
+		String permission = SakaiGCalendarServiceStaticVariables.GCAL_VIEW;
 		
 		try {			
 			site = SiteService.getSite(siteId);
@@ -152,21 +148,21 @@ public class GCalendarAction extends PagedResourceActionII
 	    	// This is a hierarchical permission structure for Google Calendar permissions
 	    	// Since these are all check boxes, this sets the permissions to the highest level
 	    	// and the lower levels are suppressed (i.e. admin overrides Edit, etc).
-			if(securityService.unlock(currentUserId, GCAL_ADMIN, siteServiceString  ) ) { 
+			if(securityService.unlock(currentUserId, SakaiGCalendarServiceStaticVariables.GCAL_ADMIN, siteServiceString  ) ) { 
 				editAllowed = true;
-				permission = GCAL_ADMIN;
+				permission = SakaiGCalendarServiceStaticVariables.GCAL_ADMIN;
 			}
-			else if ( securityService.unlock(currentUserId, GCAL_EDIT, siteServiceString)) {
+			else if ( securityService.unlock(currentUserId, SakaiGCalendarServiceStaticVariables.GCAL_EDIT, siteServiceString)) {
 				editAllowed = true;
-				permission = GCAL_EDIT;
+				permission = SakaiGCalendarServiceStaticVariables.GCAL_EDIT;
 			}
-			else if ( securityService.unlock(currentUserId, GCAL_VIEW, siteServiceString)) {
+			else if ( securityService.unlock(currentUserId, SakaiGCalendarServiceStaticVariables.GCAL_VIEW, siteServiceString)) {
 				editAllowed = false;
-				permission = GCAL_VIEW;
+				permission = SakaiGCalendarServiceStaticVariables.GCAL_VIEW;
 			}
-			else if ( securityService.unlock(currentUserId, GCAL_VIEW_ALL, siteServiceString)) {
+			else if ( securityService.unlock(currentUserId, SakaiGCalendarServiceStaticVariables.GCAL_VIEW_ALL, siteServiceString)) {
 				editAllowed = false;
-				permission = GCAL_VIEW_ALL;
+				permission = SakaiGCalendarServiceStaticVariables.GCAL_VIEW_ALL;
 			}
 			
 			// Creator?
@@ -180,7 +176,13 @@ public class GCalendarAction extends PagedResourceActionII
 			if (!site.getCreatedBy().getEid().equalsIgnoreCase(UserDirectoryService.getCurrentUser().getEid()) && hasGoogleAccount) {
 				SakaiGCalendarService.addUserToAccessControlList(site, permission);
 			}
-			       
+			
+			// if no google account - then read only in Sakai (i.e. no access to google calendar)
+			// override any previous permission values
+			if ( !hasGoogleAccount ) {
+				editAllowed = false;
+			}
+			
 		    context.put("accesstoken", accessToken);
 	        context.put("gcalid", site.getProperties().getProperty("gcalid"));
 	        this.saved_gcalid = site.getProperties().getProperty("gcalid");
