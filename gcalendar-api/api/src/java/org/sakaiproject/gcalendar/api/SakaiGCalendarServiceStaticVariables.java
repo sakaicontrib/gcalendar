@@ -7,10 +7,9 @@ public class SakaiGCalendarServiceStaticVariables {
 	public static final String REFERENCE_ROOT = Entity.SEPARATOR + "gcalendar";
 	
 	/** These strings are for mapping Sakai Permissions to Google Calendar Permissions */
-	public static final String GCAL_VIEW = "gcal.view";
-	public static final String GCAL_VIEW_ALL = "gcal.view.all";
-	public static final String GCAL_EDIT = "gcal.edit";
-	public static final String GCAL_ADMIN = "gcal.admin";
+	public static final String SECURE_GCAL_VIEW = "gcal.view";
+	public static final String SECURE_GCAL_VIEW_ALL = "gcal.view.all";
+	public static final String SECURE_GCAL_EDIT = "gcal.edit";
 	
 	public static final String RULE_ROLE_READER = "reader"; // Provides read access to the calendar. Private events will appear to users with reader access, but event details will be hidden.
 	public static final String RULE_ROLE_OWNER = "owner"; // Provides ownership of the calendar. This role has all of the permissions of the writer role with the additional ability to see and manipulate ACLs.
