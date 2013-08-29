@@ -107,8 +107,9 @@ public class GCalendarAction extends PagedResourceActionII
 		Site site = null;
 		String accessToken = null;
 		boolean editAllowed = false;
+		boolean gcalview = false;
 		boolean hasGoogleAccount = true;
-		String permission = SakaiGCalendarServiceStaticVariables.GCAL_VIEW;
+		String permission = null; // no default, we should not get this far if no permissions are set
 		
 		try {			
 			site = SiteService.getSite(siteId);
@@ -140,39 +141,39 @@ public class GCalendarAction extends PagedResourceActionII
 				}
 			}
 			
-			// If current user is the site creator or has gcal.edit or gcal.admin, they can edit
+			// If the user IsSuperUser or has gcal.edit, they can edit
 			User currentUser = UserDirectoryService.getCurrentUser();
 	    	String currentUserId = currentUser.getId();
 	    	String siteServiceString = SiteService.siteReference(siteId);
 	    	
 	    	// This is a hierarchical permission structure for Google Calendar permissions
 	    	// Since these are all check boxes, this sets the permissions to the highest level
-	    	// and the lower levels are suppressed (i.e. admin overrides Edit, etc).
-			if(securityService.unlock(currentUserId, SakaiGCalendarServiceStaticVariables.GCAL_ADMIN, siteServiceString  ) ) { 
+	    	// and the lower levels are suppressed (i.e. superuser/site update overrides eEdit overrides view.all overrides view).
+	    	boolean isSuper = securityService.isSuperUser(currentUserId);
+	    	
+	    	if(isSuper || securityService.unlock(currentUserId, org.sakaiproject.site.api.SiteService.SECURE_UPDATE_SITE_MEMBERSHIP, siteServiceString  ) ) { 
 				editAllowed = true;
-				permission = SakaiGCalendarServiceStaticVariables.GCAL_ADMIN;
+				permission = org.sakaiproject.site.api.SiteService.SECURE_UPDATE_SITE_MEMBERSHIP;
+				if (isSuper)
+					hasGoogleAccount = true;
 			}
-			else if ( securityService.unlock(currentUserId, SakaiGCalendarServiceStaticVariables.GCAL_EDIT, siteServiceString)) {
+			else if ( securityService.unlock(currentUserId, SakaiGCalendarServiceStaticVariables.SECURE_GCAL_EDIT, siteServiceString)) {
 				editAllowed = true;
-				permission = SakaiGCalendarServiceStaticVariables.GCAL_EDIT;
+				permission = SakaiGCalendarServiceStaticVariables.SECURE_GCAL_EDIT;
 			}
-			else if ( securityService.unlock(currentUserId, SakaiGCalendarServiceStaticVariables.GCAL_VIEW, siteServiceString)) {
+			else if ( securityService.unlock(currentUserId, SakaiGCalendarServiceStaticVariables.SECURE_GCAL_VIEW_ALL, siteServiceString)) {
 				editAllowed = false;
-				permission = SakaiGCalendarServiceStaticVariables.GCAL_VIEW;
+				permission = SakaiGCalendarServiceStaticVariables.SECURE_GCAL_VIEW_ALL;
 			}
-			else if ( securityService.unlock(currentUserId, SakaiGCalendarServiceStaticVariables.GCAL_VIEW_ALL, siteServiceString)) {
+			else if ( securityService.unlock(currentUserId, SakaiGCalendarServiceStaticVariables.SECURE_GCAL_VIEW, siteServiceString)) {
 				editAllowed = false;
-				permission = SakaiGCalendarServiceStaticVariables.GCAL_VIEW_ALL;
-			}
-			
-			// Creator?
-			if (site.getCreatedBy().getEid().equalsIgnoreCase(UserDirectoryService.getCurrentUser().getEid()) ) { 
-				M_log.debug("User is the creator:" + site.getCreatedBy() );
-				editAllowed = true;
+				gcalview = true;
+				permission = SakaiGCalendarServiceStaticVariables.SECURE_GCAL_VIEW;
 			}
 			
 			// If the current user is NOT the site creator AND they have a good Google Email Account
 			// Adding user to google calendar acl (access control list)
+	    	// Site creator permissions can not be updated in Google
 			if (!site.getCreatedBy().getEid().equalsIgnoreCase(UserDirectoryService.getCurrentUser().getEid()) && hasGoogleAccount) {
 				SakaiGCalendarService.addUserToAccessControlList(site, permission);
 			}
@@ -181,12 +182,14 @@ public class GCalendarAction extends PagedResourceActionII
 			// override any previous permission values
 			if ( !hasGoogleAccount ) {
 				editAllowed = false;
+				M_log.warn( "User has no google account: " + currentUser );
 			}
 			
 		    context.put("accesstoken", accessToken);
 	        context.put("gcalid", site.getProperties().getProperty("gcalid"));
 	        this.saved_gcalid = site.getProperties().getProperty("gcalid");
 	        context.put("editAllowed", editAllowed);
+	        context.put("gcalview", gcalview);
 	        
 	        return "_delegateaccess";
 			

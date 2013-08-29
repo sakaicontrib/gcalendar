@@ -18,6 +18,7 @@
 	<textarea id="accesstoken" style="visibility:hidden; display:none;">$accesstoken</textarea>
 	<textarea id="gcalid" style="visibility:hidden; display:none;">$gcalid</textarea>
 	<textarea id="editAllowed" style="visibility:hidden; display:none;">$editAllowed</textarea>
+	<textarea id="gcalview" style="visibility:hidden; display:none;">$gcalview</textarea>
 	
 	<br>
 	<br>
@@ -27,6 +28,7 @@
 	var accesstoken = '${accesstoken}';
 	var gcalid = '${gcalid}';
 	var editAllowed = '${editAllowed}';
+	var gcalview = '${gcalview}';
 	
 	$(document).ready(function() {
 	

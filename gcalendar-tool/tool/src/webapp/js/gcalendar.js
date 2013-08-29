@@ -6,6 +6,8 @@ var eventArray = []; // move globally
 
 var editable;
 
+var busy = "busy";
+
 var host = "../../"; // relative path to proxy
 //var proxyName = "proxy-gcalendar";
 var proxyName = "crossdomain/gcalendar";
@@ -25,7 +27,12 @@ getGoogleCalendar = function(accesstoken, gcalid) {
 	editable = true;
 	if ( editAllowed == "false")
 		editable = false;
-		
+	
+	// gcalview is a String
+	viewbusy = true;
+	if ( gcalview == "false")
+		viewbusy = false;
+	
     $('#calendar').fullCalendar({
 
         theme : true,       
@@ -365,7 +372,7 @@ getGoogleCalendar = function(accesstoken, gcalid) {
                     	} else { 
                         	allday = true;
                     	} 
-
+ 
                         $('#calendar').fullCalendar('renderEvent', {
                             id : datain.id,
                             title : datain.summary,
@@ -545,15 +552,25 @@ refreshCalendarItems = function( start, end, callback ) {
 			                allday = true;
 			            }
 			            
-			                                                                       
+			            // TODO: not the long-term solution
+			            if ( viewbusy ) {
+			            	titleString = busy;
+			            	descriptionString = busy;
+			            	locationString = busy;
+			            } else {
+			            	titleString = item.summary;
+			            	descriptionString = item.description;
+			            	locationString = item.location
+			            }
+			             
 	                    eventArray.push({
 	                        id : item.id,
-	                        title : item.summary,
+	                        title : titleString,
 	                        start : startdate,
 	                        end : enddate,
 	                        url : item.htmlLink,
-	                        description : item.description,
-	                        location : item.location,
+	                        description : descriptionString,
+	                        location : locationString,
 	                        allDay : allday,
 	                        sequence : item.sequence,
 	                        recurrence : item.recurrence,
