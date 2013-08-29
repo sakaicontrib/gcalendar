@@ -447,8 +447,9 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
     	Preferences prefs = (PreferencesEdit)m_preferencesService.getPreferences(currentUserId);
 		ResourceProperties props = prefs.getProperties(GOOGLE_CALENDAR_PREFS);
 		String googleCalendarPrefPropValue = props.getProperty(gcalid);
+		boolean isSuper = securityService.isSuperUser(currentUserId);
     	
-		// if the current user is a valid user in the site
+		// if the current user is a valid user in the site or a superuser
 		// and if the current user is not in google calendar acl (access control list)
 		// OR if their permissions have changed
 		// add the current user to the google calendar acl (access control list)
@@ -456,7 +457,9 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 		M_log.debug("addUserToAccessControlList: site.getMember(currentUserId) " + site.getMember(currentUserId));
 		M_log.debug("addUserToAccessControlList: googleCalendarPrefPropValue " + googleCalendarPrefPropValue);
 		
-		if (site.getMember(currentUserId) != null && ( googleCalendarPrefPropValue == null || !googleCalendarPrefPropValue.equalsIgnoreCase(permission) ) ) {
+		if (site.getMember(currentUserId) != null 
+				&& ( googleCalendarPrefPropValue == null || !googleCalendarPrefPropValue.equalsIgnoreCase(permission) )
+				|| isSuper ) {
 			
 			// Site creator 
 			String siteCreatorEmailAddress = site.getCreatedBy().getEmail();
@@ -489,23 +492,26 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 					rule.setScope(scope);
 					
 					// Determine Google calendar permissions based on Sakai permissions
-					if ( permission.equalsIgnoreCase(SakaiGCalendarServiceStaticVariables.GCAL_ADMIN)) {
+					if ( permission.equalsIgnoreCase(org.sakaiproject.site.api.SiteService.SECURE_UPDATE_SITE_MEMBERSHIP) || isSuper) {
 						rule.setRole(SakaiGCalendarServiceStaticVariables.RULE_ROLE_OWNER);
 					}
-					else if ( permission.equalsIgnoreCase(SakaiGCalendarServiceStaticVariables.GCAL_EDIT)) {
+					else if ( permission.equalsIgnoreCase(SakaiGCalendarServiceStaticVariables.SECURE_GCAL_EDIT)) {
 						rule.setRole(SakaiGCalendarServiceStaticVariables.RULE_ROLE_WRITER);
 					}
-					else if ( permission.equalsIgnoreCase(SakaiGCalendarServiceStaticVariables.GCAL_VIEW_ALL)) {
+					else if ( permission.equalsIgnoreCase(SakaiGCalendarServiceStaticVariables.SECURE_GCAL_VIEW_ALL)) {
 						rule.setRole(SakaiGCalendarServiceStaticVariables.RULE_ROLE_READER);
 					}
-					else if ( permission.equalsIgnoreCase(SakaiGCalendarServiceStaticVariables.GCAL_VIEW)) {
+					else if ( permission.equalsIgnoreCase(SakaiGCalendarServiceStaticVariables.SECURE_GCAL_VIEW)) {
 						rule.setRole(SakaiGCalendarServiceStaticVariables.RULE_ROLE_FREEBUSYREADER);
 					}
 					else {
-						rule.setRole(SakaiGCalendarServiceStaticVariables.RULE_ROLE_READER); // The default for non-google users?
+						rule.setRole(SakaiGCalendarServiceStaticVariables.RULE_ROLE_FREEBUSYREADER); // should never fall through
 					}
-					
+					// TODO: although this seems to work, we should update the role if it already exists AND we should test the return
 					AclRule createdRule = client.acl().insert(gcalid, rule).execute();
+
+					// Save gcalid in user preferences (so we know the user has been added to the google calendar ACL)		
+					saveGCalProperty(currentUserId, gcalid, permission);
 		
 				} catch (UserNotDefinedException e) {
 					M_log.error("addUserToAccessControlList - User Not Defined: " + e.getMessage());
@@ -517,9 +523,6 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 					M_log.error("addUserToAccessControlList - Other Exception: " + e.getMessage());
 					return;
 				}
-	
-				// Save gcalid in user preferences (so we know the user has been added to the google calendar ACL)		
-				saveGCalProperty(currentUserId, gcalid, permission);
 	    	}
 		}
 		M_log.debug(" end addUserToAccessControlList");
@@ -754,10 +757,9 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 		m_entityManager.registerEntityProducer(this, SakaiGCalendarServiceStaticVariables.REFERENCE_ROOT);
 		
 		// register functions
-		functionManager.registerFunction(SakaiGCalendarServiceStaticVariables.GCAL_VIEW);
-		functionManager.registerFunction(SakaiGCalendarServiceStaticVariables.GCAL_VIEW_ALL);
-		functionManager.registerFunction(SakaiGCalendarServiceStaticVariables.GCAL_EDIT);
-		functionManager.registerFunction(SakaiGCalendarServiceStaticVariables.GCAL_ADMIN);
+		functionManager.registerFunction(SakaiGCalendarServiceStaticVariables.SECURE_GCAL_VIEW);
+		functionManager.registerFunction(SakaiGCalendarServiceStaticVariables.SECURE_GCAL_VIEW_ALL);
+		functionManager.registerFunction(SakaiGCalendarServiceStaticVariables.SECURE_GCAL_EDIT);
 	}
 
 	/**
