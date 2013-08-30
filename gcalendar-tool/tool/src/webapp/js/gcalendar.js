@@ -1,5 +1,7 @@
 /*
  getGoogleCalendar
+ Notes: The Math.floor((Math.random()*100)+1) in the ajax calls are to make sure that ID does not return
+ the cached values for similar calls.
  */
 
 var eventArray = []; // move globally
@@ -92,7 +94,7 @@ getGoogleCalendar = function(accesstoken, gcalid) {
 
                     // if ajax call success
                     success : function(datain) {
-                    	//alert( "event updated" );
+                    	
                     },
                     
             		error : function(XMLHttpRequest, textStatus, errorThrown) {
@@ -366,7 +368,7 @@ getGoogleCalendar = function(accesstoken, gcalid) {
 	                            allday = false;
 	                        } else {
 	                            startdate = datain.start.date;
-	                            //enddate = new Date(datain.end.date); // Richard needed repeating?
+	                            //enddate = new Date(datain.end.date); // Do not set the enddate because it causes repeating events
 	                            allday = true; 
 	                        }
                     	} else { 
@@ -540,47 +542,46 @@ refreshCalendarItems = function( start, end, callback ) {
 		            var startdate;
 		            var enddate;
 		            var allday; 
-		            // Skip cancelled events // TODO: I don't think this check is needed now because I don't think cancelled events come through any more - investigate
-		            //if ( item.status != "cancelled") {
-			            if (item.start.dateTime) {
-			                startdate = item.start.dateTime;
-			                enddate = item.end.dateTime;
-			                allday = false;
-			            } else {
-			                startdate = item.start.date;
-			                // enddate = new Date(item.end.date); // IE does not like the enddate being set
-			                allday = true;
-			            }
-			            
-			            // TODO: not the long-term solution
-			            if ( viewbusy ) {
-			            	titleString = busy;
-			            	descriptionString = busy;
-			            	locationString = busy;
-			            } else {
-			            	titleString = item.summary;
-			            	descriptionString = item.description;
-			            	locationString = item.location
-			            }
-			             
-	                    eventArray.push({
-	                        id : item.id,
-	                        title : titleString,
-	                        start : startdate,
-	                        end : enddate,
-	                        url : item.htmlLink,
-	                        description : descriptionString,
-	                        location : locationString,
-	                        allDay : allday,
-	                        sequence : item.sequence,
-	                        recurrence : item.recurrence,
-	                        recurringEventId : item.recurringEventId
-	                    });
-		            //}
+		            
+		            if (item.start.dateTime) {
+		                startdate = item.start.dateTime;
+		                enddate = item.end.dateTime;
+		                allday = false;
+		            } else {
+		                startdate = item.start.date;
+		                // enddate = new Date(item.end.date); // IE does not like the enddate being set
+		                allday = true;
+		            }
+		            
+		            // TODO: not the long-term solution
+		            if ( viewbusy ) {
+		            	titleString = busy;
+		            	descriptionString = busy;
+		            	locationString = busy;
+		            } else {
+		            	titleString = item.summary;
+		            	descriptionString = item.description;
+		            	locationString = item.location
+		            }
+		             
+                    eventArray.push({
+                        id : item.id,
+                        title : titleString,
+                        start : startdate,
+                        end : enddate,
+                        url : item.htmlLink,
+                        description : descriptionString,
+                        location : locationString,
+                        allDay : allday,
+                        sequence : item.sequence,
+                        recurrence : item.recurrence,
+                        recurringEventId : item.recurringEventId
+                    });
+
 		        });
             } // close if
         },
-        // if ajax call failed // TODO: is this correct?
+        // if ajax call failed 
         error : function(XMLHttpRequest, textStatus, errorThrown) {
             $("#newEvent .messageValidation").remove();
             $("#newEvent").prepend("<p class=\"messageValidation\" style=\"height:20px\" >Sorry, cannot get information from the Google calendar!</p>");
