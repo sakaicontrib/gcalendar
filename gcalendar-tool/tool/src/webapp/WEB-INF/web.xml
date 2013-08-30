@@ -28,8 +28,8 @@
 			org.sakaiproject.vm.VelocityServlet
 		</servlet-class>
 		<init-param>
-			<param-name> properties </param-name>
-			<param-value> velocity.properties </param-value>
+			<param-name>properties</param-name>
+			<param-value>velocity.properties</param-value>
 		</init-param>
 		<load-on-startup>1</load-on-startup>
 	</servlet>
