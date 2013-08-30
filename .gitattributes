@@ -6,7 +6,6 @@ gcalendar-impl/impl/src/java/org/sakaiproject/gcalendar/impl/SakaiGCalendarServi
 gcalendar-tool/tool/src/bundle/permissions.properties -text svneol=unset#text/plain
 gcalendar-tool/tool/src/java/org/sakaiproject/gcalendar/tool/GCalendarAction.java svn_keywords=Date+Revision+Author+HeadURL+Id
 gcalendar-tool/tool/src/webapp/js/gcalendar.js -text
-gcalendar-tool/tool/src/webapp/js/jquery-plugin-xdr.js -text svneol=unset#text/plain
 gcalendar-tool/tool/src/webapp/vm/chef_gcalendar_delegateaccess.vm svn_keywords=Date+Revision+Author+HeadURL+Id
 gcalendar-tool/tool/src/webapp/vm/chef_gcalendar_noaccess.vm -text
 gcalendar-tool/tool/src/webapp/vm/chef_gcalendar_nocalendar.vm -text
