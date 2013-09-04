@@ -9,10 +9,10 @@ Sakai configuration:
    $ cd gcalendar
    $ mvn install sakai:deploy   
    
-3. Setup library resources for FullCalendar. You can either:
-   a. svn co https://source.sakaiproject.org/svn/reference/branches/SAK-23308 reference
-   b. cp -R gcalendar/library/fullcalendar into sakai/reference/library/src/webapp/fullcalendar
-   c. go to sakai/reference/library mvn install sakaai:deploy or deploy from the root directory
+3. Setup library resources for FullCalendar:
+   a. cd reference
+   b. svn merge -c 129326  https://source.sakaiproject.org/svn/reference/trunk
+   c. mvn install sakai:deploy
 
 4. Define the following in sakai.properties:
    google.service.account.email=
