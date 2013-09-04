@@ -18,7 +18,12 @@ Sakai configuration:
    google.service.account.email=
    google.private.key=
    
-5. For testing, make sure the Sakai user account has an email which matches the Google account
+5. Deploy a proxy defined for gcalendar, for example:
+   a. svn co https://source.sakaiproject.org/contrib/umich/proxy-crossdomain/trunk/ proxy-crossdomain
+   b. cd proxy-crossdomain
+   c. mvn install sakai:deploy
+
+6. For testing, make sure the Sakai user account has an email which matches the Google account
    
 Google configuration:
 =====================
