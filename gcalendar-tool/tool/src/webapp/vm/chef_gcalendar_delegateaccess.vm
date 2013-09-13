@@ -12,6 +12,15 @@
 <script type='text/javascript' src='/sakai-gcalendar-tool/js/gcalendar.js'></script>
 
 <div class="portletBody">
+#if($menu)
+	<ul class="navIntraTool actionToolBar" role="menu">
+		<li class="firstToolBarItem" role="menuitem"><span><a href="#" title="GCalendar Menu" onclick="location = '#toolLink("$action" "doPermissions")';return false;">
+			$tlang.getString("java.permissions")
+		<span class="skip">$toolTitle</span>
+		</a></span></li>
+	</ul>
+#end
+	
 	<h3>
 		$tlang.getString("gcal.title")
 	</h3>
@@ -19,6 +28,7 @@
 	<textarea id="gcalid" style="visibility:hidden; display:none;">$gcalid</textarea>
 	<textarea id="editAllowed" style="visibility:hidden; display:none;">$editAllowed</textarea>
 	<textarea id="gcalview" style="visibility:hidden; display:none;">$gcalview</textarea>
+	<textarea id="menu" style="visibility:hidden; display:none;">$menu</textarea>
 	
 	<br>
 	<br>
@@ -29,6 +39,7 @@
 	var gcalid = '${gcalid}';
 	var editAllowed = '${editAllowed}';
 	var gcalview = '${gcalview}';
+	var menu = '${menu}';
 	
 	$(document).ready(function() {
 	
