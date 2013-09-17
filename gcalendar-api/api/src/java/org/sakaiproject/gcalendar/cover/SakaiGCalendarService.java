@@ -59,7 +59,7 @@ public class SakaiGCalendarService    {
     /**
 	 * get the Google Calendar Access Token
 	 * 
-	 * @param String
+	 * @param String Google Calendar ID
 	 * @return String
 	 *        
 	 */
@@ -75,8 +75,8 @@ public class SakaiGCalendarService    {
     /**
 	 * get the Google Calendar Access Token
 	 * 
-	 * @param String
-	 * @param String
+	 * @param String Google Calendar ID
+	 * @param String Owner's Email Address
 	 * @return String
 	 *        
 	 */

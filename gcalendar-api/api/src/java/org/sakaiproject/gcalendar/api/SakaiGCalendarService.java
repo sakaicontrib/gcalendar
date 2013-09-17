@@ -39,7 +39,7 @@ public interface SakaiGCalendarService extends EntityProducer {
 	/**
 	 * get the Google Calendar Access Token
 	 * 
-	 * @param String
+	 * @param String Google Calendar ID
 	 * @return String
 	 *        
 	 */
@@ -48,8 +48,8 @@ public interface SakaiGCalendarService extends EntityProducer {
 	/**
 	 * get the Google Calendar Access Token
 	 * 
-	 * @param String
-	 * @param String
+	 * @param String Google Calendar ID
+	 * @param String Owner's email address
 	 * @return String
 	 *        
 	 */

@@ -4,7 +4,9 @@ import org.sakaiproject.entity.api.Entity;
 
 public class SakaiGCalendarServiceStaticVariables {
 	/** This string starts the references to resources in this service. */
-	public static final String REFERENCE_ROOT = Entity.SEPARATOR + "gcalendar";
+	public static final String GCALENDAR = "gcalendar";
+	public static final String GCALID = "gcalid";
+	public static final String REFERENCE_ROOT = Entity.SEPARATOR + GCALENDAR;
 	
 	/** These strings are for mapping Sakai Permissions to Google Calendar Permissions */
 	public static final String SECURE_GCAL_VIEW = "gcal.view";
