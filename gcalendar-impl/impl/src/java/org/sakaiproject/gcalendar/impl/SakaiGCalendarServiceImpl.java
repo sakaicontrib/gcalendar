@@ -99,8 +99,8 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 	/** The string that Google Calendar uses for preferences */
 	private static final String GOOGLE_CALENDAR_PREFS = "sakai:google:calendar";
 	
-	/** The string for "gcalid" */
-	private static final String PROPERTY_GCALID = "gcalid";
+	/** The string for Google-CalendarSample/1.0, used for Google API calls */
+	private static final String GOOGLE_CALENDAR_SAMPLE_1_0 = "Google-CalendarSample/1.0";
 	
 	/** Global instance of the HTTP transport. */
 	private static final HttpTransport HTTP_TRANSPORT = new NetHttpTransport();
@@ -143,8 +143,8 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 	public void contextCreated(String context, boolean toolPlacement) {
 
 		if (toolPlacement) {
-			boolean gCalendarExists = checkGCalendarExists(context);
-			if (!gCalendarExists) {
+			boolean okToCreate = okToCreateGoogleCalendar(context);
+			if (okToCreate) {
 				enableGCalendar(context);
 			}
 		}
@@ -154,8 +154,8 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 	public void contextUpdated(String context, boolean toolPlacement) {
 
 		if (toolPlacement) {
-			boolean gCalendarExists = checkGCalendarExists(context);
-			if (!gCalendarExists) {
+			boolean okToCreate = okToCreateGoogleCalendar(context);
+			if (okToCreate) {
 				enableGCalendar(context);
 			}
 		}
@@ -168,6 +168,12 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 		// Deletion should be done deliberately via the Google UI
 	}
 
+	/**
+	 * Provide the string array of tool ids, for tools that we need context preperation for.
+	 * Get a list of all tools that support the import (transfer copy) copy
+	 * 
+	 * @return tool IDs
+	 */
 	@Override
 	public String[] myToolIds() {
 		String[] toolIds = { "sakai.gcalendar" };
@@ -175,81 +181,67 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 	}
 		
 	/**
-	 * check the google calendar exists for the site.
+	 * Is it okay to create the google calendar?
 	 * 
 	 * @param context site identifier
-	 * @return true if google calendar exists (or if there is an error and no calendar should be created)
+	 * @return true if it is okay to create the google calendar
 	 * 
 	 */
-	private boolean checkGCalendarExists(String context) {
+	private boolean okToCreateGoogleCalendar(String context) {
 		
 		Site site = null;
 		String siteTitle = null;
-
+		String gcalid = null;
+		
 		// get site and site title
 		try {
 			site = m_siteService.getSite(context);
 			siteTitle = site.getTitle();
 		} catch (IdUnusedException e) {
 			M_log.warn(e.getMessage());
-			return true; // site should not be created with out this information
+			return false; // site should not be created with out this information
 		}
 
 		// if the Google Calendar already created and the Google Calendar Id already saved in the site property
 		// return true
 		// else, create the calendar in google.
-		if (site.getProperties().getProperty(PROPERTY_GCALID) != null) { 
-			return true;
+		if (site.getProperties().getProperty(SakaiGCalendarServiceStaticVariables.GCALID) != null) { 
+			return false;
 		} else {
 			String emailAddress = getUserEmailAddress();
 			
 			try {
 				GoogleCredential credential = getGoogleCredential(emailAddress);
 				if (credential == null) {
-					M_log.warn(this + " checkGCalendarExists - Not Authorized");
-					return true; // user not authorized - do not create calendar
+					M_log.warn(this + " okToCreateGoogleCalendar - Not Authorized");
+					return false; // user not authorized - do not create calendar
 				}
-				client = new com.google.api.services.calendar.Calendar.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential)
-						.setApplicationName("Google-CalendarSample/1.0")
-						.build();
-
-				com.google.api.services.calendar.model.CalendarList feed = client.calendarList().list().execute();
-				String summary = null;
-
-				if (feed.getItems() != null) {
-					List<CalendarListEntry> calendarList = feed.getItems();
-					for (CalendarListEntry calendarEntry : calendarList) {
-						summary = (String) calendarEntry.get("summary");
-						// if the Google Calendar already created, then return true
-						// Note: this could be an issue if there is more than one Google Calendar with the same name
-						// created by the same user.
-						if (siteTitle.equalsIgnoreCase(summary)) {
-							// TBD - verify Sakai site-id against Google Calendar description or other parameter
-							return true;
-						}
-					}
-				}
+				gcalid = getGoogleCalendarID(siteTitle, emailAddress, credential);
+				
+				if (null != gcalid)
+					return false;
+				
 			} catch (IdUnusedException e) {
 				// return true if catch exception so we will not create a google calendar
 				M_log.error("getGoogleCalendarId: " + e.getMessage());
-				return true;
+				return false;
 			} catch (IOException e) {
 				// return true if catch exception so we will not create a google calendar
 				M_log.error("getGoogleCalendarId: " + e.getMessage());
-				return true;
+				return false;
 			} catch (Exception e) {
 				// return true if catch exception so we will not create a google calendar
 				M_log.error("getGoogleCalendarId: " + e.getMessage());
-				return true;
+				return false;
 			}
 		}
 
-		// return false if the Google Calendar is NOT created
-		return false;
+		// return true - it is okay to create the google calendar
+		return true;
 	}
 
 	/**
-	 * save the Google Calendar Info
+	 * Save the Google Calendar Id as a site Property ("gcalid")
 	 * 
 	 * @param Site current site
 	 * @return String Google calendar access token
@@ -266,33 +258,18 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 			if (credential == null) {
 				return null; // user not authorized - do not return access token
 			}
-			client = new com.google.api.services.calendar.Calendar.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential)
-					.setApplicationName("Google-CalendarSample/1.0")
-					.build();
+			
+			gcalid = getGoogleCalendarID(siteTitle, emailAddress, credential);
 
-			com.google.api.services.calendar.model.CalendarList feed = client.calendarList().list().execute();
-			String summary = null;
-
-			if (feed.getItems() != null) {
-				List<CalendarListEntry> calendarList = feed.getItems();
-				for (CalendarListEntry calendarEntry : calendarList) {
-					summary = (String) calendarEntry.get("summary");
-					if (siteTitle.equalsIgnoreCase(summary)) {
-						gcalid = calendarEntry.getId();
-						break;
-					}
-				}
-			} else {
-				return null;
+			if ( null != gcalid ) {
+				// add gcalid as the Sakai site property
+				site.getPropertiesEdit().addProperty(SakaiGCalendarServiceStaticVariables.GCALID, gcalid);
+	
+				// save the site
+				m_siteService.save(site);
+	
+				return credential.getAccessToken();
 			}
-
-			// add gcalid as the Sakai site property
-			site.getPropertiesEdit().addProperty(PROPERTY_GCALID, gcalid);
-
-			// save the site
-			m_siteService.save(site);
-
-			return credential.getAccessToken();
 
 		} catch (IdUnusedException e) {
 			M_log.error("saveGoogleCalendarInfo: " + e.getMessage());
@@ -304,8 +281,57 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 			M_log.error("saveGoogleCalendarInfo: " + e.getMessage());
 			return null;
 		}
+		return null;
 	}
 
+	/**
+	 * Get the Google Calendar ID from Google
+	 * 
+	 * @param String Site ID
+	 * @param String Email ID
+	 * @param String Google Credentials
+	 * @return String Google Calendar ID or null, if not found
+	 * 
+	 */
+	public String getGoogleCalendarID(String siteTitle, String emailAddress, GoogleCredential credential) {
+
+		String gcalid = null;
+		
+		try {
+			
+			client = new com.google.api.services.calendar.Calendar.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential)
+					.setApplicationName(GOOGLE_CALENDAR_SAMPLE_1_0)
+					.build();
+
+			com.google.api.services.calendar.model.CalendarList feed = client.calendarList().list().execute();
+			String summary = null;
+
+			if (feed.getItems() != null) {
+				List<CalendarListEntry> calendarList = feed.getItems();
+				for (CalendarListEntry calendarEntry : calendarList) {
+					// Note: this is an issue if there is more than one Google Calendar with the same name
+					// created by the same user. This will find the first one returned.
+					summary = (String) calendarEntry.get("summary");
+					if (siteTitle.equals(summary)) {
+						gcalid = calendarEntry.getId();
+						return gcalid;
+					}
+				}
+			} else {
+				return null;
+			}
+
+		} catch (IOException e) {
+			M_log.error("saveGoogleCalendarInfo: " + e.getMessage());
+			return null;
+		} catch (Exception e) {
+			M_log.error("saveGoogleCalendarInfo: " + e.getMessage());
+			return null;
+		}
+		
+		return null;
+	}
+	
 	/**
 	 * Create a calendar for the site.
 	 * 
@@ -323,14 +349,14 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 				return; // user not authorized
 			}
 			client = new com.google.api.services.calendar.Calendar.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential)
-					.setApplicationName("Google-CalendarSample/1.0")
+					.setApplicationName(GOOGLE_CALENDAR_SAMPLE_1_0)
 					.build();
 
 			// get site
 			Site site = null;
 			try {
 				site = m_siteService.getSite(context);
-				siteGCalendar = associateGoogleCalendarWithClient(site);
+				siteGCalendar = createGoogleCalendar(site);
 			} catch (IdUnusedException e) {
 				M_log.error("enableGCalendar: " + e.getMessage());
 			}
@@ -346,10 +372,11 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 	 * Add new calendar for a Sakai site.
 	 * 
 	 * @param Site
-	 * @return Calendar
+	 * @return com.google.api.services.calendar.model.Calendar
 	 * 
 	 */
-	private com.google.api.services.calendar.model.Calendar associateGoogleCalendarWithClient(Site site) throws IOException {
+	// Richard this needs client
+	private com.google.api.services.calendar.model.Calendar createGoogleCalendar(Site site) throws IOException {
 		
 		com.google.api.services.calendar.model.Calendar calendar = new com.google.api.services.calendar.model.Calendar();
 
@@ -372,30 +399,7 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 		
 		String emailAddress = getUserEmailAddress();
 
-		try {
-			GoogleCredential credential = getGoogleCredential(emailAddress);
-			if (credential == null) {
-				return null; // user not authorized
-			}
-			client = new com.google.api.services.calendar.Calendar.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential)
-					.setApplicationName("Google-CalendarSample/1.0")
-					.build();
-
-			// get the calendar using gcalid stored in the site property from sakai db
-			com.google.api.services.calendar.model.Calendar calendar = client.calendars().get(gcalid).execute();
-			
-			return credential.getAccessToken();
-
-		} catch (IdUnusedException e) {
-			M_log.error("getGCalendarAccessToken - IdUnusedException: " + e.getMessage());
-			return null;
-		} catch (IOException e) {
-			M_log.error("getGCalendarAccessToken - IOException: " + e.getMessage());
-			return null;
-		} catch (Exception e) {
-			M_log.error("getGCalendarAccessToken - Exception: " + e.getMessage());
-			return null;
-		}
+		return getGCalendarAccessToken(gcalid, emailAddress);
 	}
 	/**
 	 * get google calendar access token for a Sakai site.
@@ -405,18 +409,20 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 	 * @return String google calendar access token
 	 * 
 	 */
-	public String getGCalendarAccessToken(String gcalid, String emailID) {
+	public String getGCalendarAccessToken( String gcalid, String emailID) {
 
 		try {
 			GoogleCredential credential = getGoogleCredential(emailID);
 			if (credential == null) {
 				return null; // user not authorized
 			}
+			// At this point credential has no Access Token
 			client = new com.google.api.services.calendar.Calendar.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential)
-					.setApplicationName("Google-CalendarSample/1.0")
+					.setApplicationName(GOOGLE_CALENDAR_SAMPLE_1_0)
 					.build();
 
 			// get the calendar using gcalid stored in the site property from sakai db
+			// This line of code fill in the Access Token - it can not be refactored out
 			com.google.api.services.calendar.model.Calendar calendar = client.calendars().get(gcalid).execute();
 			
 			return credential.getAccessToken();
@@ -442,7 +448,7 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
     public void addUserToAccessControlList(Site site, String permission) {
     	
     	//boolean isInstructor = false;
-    	String gcalid = site.getProperties().getProperty(PROPERTY_GCALID);
+    	String gcalid = site.getProperties().getProperty(SakaiGCalendarServiceStaticVariables.GCALID);
     	User currentUser = UserDirectoryService.getCurrentUser();
     	String currentUserId = currentUser.getId();
     	
@@ -456,7 +462,7 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 		// OR if their permissions have changed
 		// add the current user to the google calendar acl (access control list)		
 		if (site.getMember(currentUserId) != null 
-				&& ( googleCalendarPrefPropValue == null || !googleCalendarPrefPropValue.equalsIgnoreCase(permission) )
+				&& ( googleCalendarPrefPropValue == null || !googleCalendarPrefPropValue.equals(permission) )
 				|| isSuper ) {
 			
 			// Site creator 
@@ -476,7 +482,7 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 						return; // user not authorized
 					}
 					client = new com.google.api.services.calendar.Calendar.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential)
-							.setApplicationName("Google-CalendarSample/1.0")
+							.setApplicationName(GOOGLE_CALENDAR_SAMPLE_1_0)
 							.build();							
 						
 					String currentUserEmailAddress = getUserEmailAddress();
@@ -488,16 +494,16 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 					rule.setScope(scope);
 					
 					// Determine Google calendar permissions based on Sakai permissions
-					if ( permission.equalsIgnoreCase(org.sakaiproject.site.api.SiteService.SECURE_UPDATE_SITE_MEMBERSHIP) || isSuper) {
+					if ( permission.equals(org.sakaiproject.site.api.SiteService.SECURE_UPDATE_SITE_MEMBERSHIP) || isSuper) {
 						rule.setRole(SakaiGCalendarServiceStaticVariables.RULE_ROLE_OWNER);
 					}
-					else if ( permission.equalsIgnoreCase(SakaiGCalendarServiceStaticVariables.SECURE_GCAL_EDIT)) {
+					else if ( permission.equals(SakaiGCalendarServiceStaticVariables.SECURE_GCAL_EDIT)) {
 						rule.setRole(SakaiGCalendarServiceStaticVariables.RULE_ROLE_WRITER);
 					}
-					else if ( permission.equalsIgnoreCase(SakaiGCalendarServiceStaticVariables.SECURE_GCAL_VIEW_ALL)) {
+					else if ( permission.equals(SakaiGCalendarServiceStaticVariables.SECURE_GCAL_VIEW_ALL)) {
 						rule.setRole(SakaiGCalendarServiceStaticVariables.RULE_ROLE_READER);
 					}
-					else if ( permission.equalsIgnoreCase(SakaiGCalendarServiceStaticVariables.SECURE_GCAL_VIEW)) {
+					else if ( permission.equals(SakaiGCalendarServiceStaticVariables.SECURE_GCAL_VIEW)) {
 						rule.setRole(SakaiGCalendarServiceStaticVariables.RULE_ROLE_FREEBUSYREADER);
 					}
 					else {
@@ -526,7 +532,7 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
     /**
 	 * Set editing mode on for user and add user if not existing
 	 */
-	private PreferencesEdit setUserEditingOn(String userId) {
+	private PreferencesEdit getPreferencesEdit(String userId) {
 
 		PreferencesEdit m_edit = null;
 		try {
@@ -535,14 +541,14 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 			try {
 				m_edit = m_preferencesService.add(userId);
 			} catch (Exception ee) {
-				M_log.error("setUserEditingOn: " + e.getMessage());
+				M_log.error("getPreferencesEdit: " + e.getMessage());
 				return null;
 			}
 		} catch (InUseException e) {
-			M_log.error("setUserEditingOn: " + e.getMessage());
+			M_log.error("getPreferencesEdit: " + e.getMessage());
 			return null;
 		} catch (PermissionException e) {
-			M_log.error("setUserEditingOn: " + e.getMessage());
+			M_log.error("getPreferencesEdit: " + e.getMessage());
 			return null;
 		}
 		
@@ -553,7 +559,7 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 	 * Save google calendar id in user preferences
 	 */
 	private void saveGCalProperty(String currentUserId, String gcalid, String perm) {
-		PreferencesEdit m_edit = setUserEditingOn(currentUserId);
+		PreferencesEdit m_edit = getPreferencesEdit(currentUserId);
 		
 		ResourcePropertiesEdit props = m_edit.getPropertiesEdit( GOOGLE_CALENDAR_PREFS );
 		props.addProperty(gcalid, perm); // Save the permission to see if it changes the next time they sign in
