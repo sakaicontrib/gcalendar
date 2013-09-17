@@ -47,7 +47,6 @@ import org.sakaiproject.event.api.SessionState;
 import org.sakaiproject.exception.IdUnusedException;
 import org.sakaiproject.gcalendar.api.SakaiGCalendarServiceStaticVariables;
 import org.sakaiproject.gcalendar.cover.SakaiGCalendarService;
-import org.sakaiproject.gcalendar.api.SakaiGCalendarServiceStaticVariables;
 import org.sakaiproject.site.api.Site;
 import org.sakaiproject.site.cover.SiteService;
 import org.sakaiproject.tool.cover.ToolManager;
@@ -85,9 +84,7 @@ public class GCalendarAction extends PagedResourceActionII
 	private static Log M_log = LogFactory.getLog(GCalendarAction.class);
 	
 	/** Resource bundle using current language locale */
-	private static ResourceLoader rb = new ResourceLoader("gcalendar");
-	
-	// private static final String INSTRUCTOR_ROLE = "Instructor";
+	private static ResourceLoader rb = new ResourceLoader(SakaiGCalendarServiceStaticVariables.GCALENDAR);
 
 	protected SecurityService securityService = null;
 	
