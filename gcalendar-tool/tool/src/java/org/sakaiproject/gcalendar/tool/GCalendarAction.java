@@ -197,7 +197,7 @@ public class GCalendarAction extends PagedResourceActionII
 				permission = SakaiGCalendarServiceStaticVariables.SECURE_GCAL_EDIT;
 			}
 			else if ( securityService.unlock(currentUserId, SakaiGCalendarServiceStaticVariables.SECURE_GCAL_VIEW_ALL, siteServiceString)) {
-				editAllowed = false;
+				editAllowed = true;
 				permission = SakaiGCalendarServiceStaticVariables.SECURE_GCAL_VIEW_ALL;
 			}
 			else if ( securityService.unlock(currentUserId, SakaiGCalendarServiceStaticVariables.SECURE_GCAL_VIEW, siteServiceString)) {
