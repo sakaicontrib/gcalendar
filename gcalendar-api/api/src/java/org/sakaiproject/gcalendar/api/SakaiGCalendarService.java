@@ -31,7 +31,7 @@ public interface SakaiGCalendarService extends EntityProducer {
 	 * save the Google Calendar Id to the site property and return the Access Token
 	 * 
 	 * @param Site
-	 * @return String
+	 * @return String Access Token
 	 *        
 	 */
 	public String saveGoogleCalendarInfo(Site site);
@@ -40,7 +40,7 @@ public interface SakaiGCalendarService extends EntityProducer {
 	 * get the Google Calendar Access Token
 	 * 
 	 * @param String Google Calendar ID
-	 * @return String
+	 * @return String Access Token
 	 *        
 	 */
 	public String getGCalendarAccessToken(String gcalid);
@@ -50,7 +50,7 @@ public interface SakaiGCalendarService extends EntityProducer {
 	 * 
 	 * @param String Google Calendar ID
 	 * @param String Owner's email address
-	 * @return String
+	 * @return String Access Token
 	 *        
 	 */
 	public String getGCalendarAccessToken(String gcalid, String emailId);
@@ -59,6 +59,7 @@ public interface SakaiGCalendarService extends EntityProducer {
 	 * Adding user to google calendar acl (access control list)
 	 * 
 	 * @param Site
+	 * @param Permission (gcal.view, gcal.view.all, gcalview.edit, or site.upd.site.mbrshp )
 	 *        
 	 */
 	public void addUserToAccessControlList(Site site, String perm);
