@@ -191,6 +191,7 @@ public class GCalendarAction extends PagedResourceActionII
 	    	if(isSuper || securityService.unlock(currentUserId, org.sakaiproject.site.api.SiteService.SECURE_UPDATE_SITE_MEMBERSHIP, siteServiceString  ) ) { 
 				viewDetailsAllowed = true;
 				createEventsAllowed = true;
+				gcalview = true;
 				permission = org.sakaiproject.site.api.SiteService.SECURE_UPDATE_SITE_MEMBERSHIP;
 				if (isSuper)
 					hasGoogleAccount = true;
@@ -198,17 +199,19 @@ public class GCalendarAction extends PagedResourceActionII
 			else if ( securityService.unlock(currentUserId, SakaiGCalendarServiceStaticVariables.SECURE_GCAL_EDIT, siteServiceString)) {
 				viewDetailsAllowed = true;
 				createEventsAllowed = true;
+				gcalview = true;
 				permission = SakaiGCalendarServiceStaticVariables.SECURE_GCAL_EDIT;
 			}
 			else if ( securityService.unlock(currentUserId, SakaiGCalendarServiceStaticVariables.SECURE_GCAL_VIEW_ALL, siteServiceString)) {
 				viewDetailsAllowed = true;
 				createEventsAllowed = false;
+				gcalview = true;
 				permission = SakaiGCalendarServiceStaticVariables.SECURE_GCAL_VIEW_ALL;
 			}
 			else if ( securityService.unlock(currentUserId, SakaiGCalendarServiceStaticVariables.SECURE_GCAL_VIEW, siteServiceString)) {
 				viewDetailsAllowed = false;
 				createEventsAllowed = false;
-				gcalview = true;
+				gcalview = false;
 				permission = SakaiGCalendarServiceStaticVariables.SECURE_GCAL_VIEW;
 			}
 			
@@ -224,6 +227,7 @@ public class GCalendarAction extends PagedResourceActionII
 			if ( !hasGoogleAccount ) {
 				viewDetailsAllowed = false;
 				createEventsAllowed = false;
+				gcalview = false;
 				M_log.warn( "User has no google account: " + currentUser );
 			}
 						

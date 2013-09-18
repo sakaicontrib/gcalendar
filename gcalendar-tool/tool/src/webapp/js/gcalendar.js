@@ -36,10 +36,10 @@ getGoogleCalendar = function(accesstoken, gcalid) {
 	if ( createEventsAllowed == "false")
 		createEvents = false;
 	
-	// gcalview is a String
-	viewbusy = true;
+	// gcalview is a String (permission gcal.view - show no details)
+	viewbusyOnly = false;
 	if ( gcalview == "false")
-		viewbusy = false;
+		viewbusyOnly = true;
 	
     $('#calendar').fullCalendar({
 
@@ -560,7 +560,7 @@ refreshCalendarItems = function( start, end, callback ) {
 		            }
 		            
 		            // TODO: not the long-term solution
-		            if ( viewbusy ) {
+		            if ( viewbusyOnly ) {
 		            	titleString = busy;
 		            	descriptionString = busy;
 		            	locationString = busy;
