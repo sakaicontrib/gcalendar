@@ -7,6 +7,7 @@
 var eventArray = []; // move globally
 
 var editable;
+var createEvents;
 
 var busy = "busy";
 
@@ -25,10 +26,15 @@ var eventTimeTextArray = ["12:00am", "12:30am", "1:00am", "1:30am", "2:00am", "2
                           "6:00pm", "6:30pm", "7:00pm", "7:30pm", "8:00pm", "8:30pm", "9:00pm", "9:30pm", "10:00pm", "10:30pm", "11:00pm", "11:30pm"];
 
 getGoogleCalendar = function(accesstoken, gcalid) {
-	// editAllowed is a String
+	// viewDetailsAllowed is a String
 	editable = true;
-	if ( editAllowed == "false")
+	if ( viewDetailsAllowed == "false")
 		editable = false;
+	
+	// viewDetailsAllowed is a String
+	createEvents = true;
+	if ( createEventsAllowed == "false")
+		createEvents = false;
 	
 	// gcalview is a String
 	viewbusy = true;
@@ -185,7 +191,7 @@ getGoogleCalendar = function(accesstoken, gcalid) {
         // create an event in a day
         dayClick : function(date, allDay, jsEvent, view) {
         	
-        	if ( editable == false )
+        	if ( editable == false || createEvents == false )
             	return false;
         	
             $(function() {               

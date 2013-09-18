@@ -26,10 +26,10 @@
 	</h3>
 	<textarea id="accesstoken" style="visibility:hidden; display:none;">$accesstoken</textarea>
 	<textarea id="gcalid" style="visibility:hidden; display:none;">$gcalid</textarea>
-	<textarea id="editAllowed" style="visibility:hidden; display:none;">$editAllowed</textarea>
+	<textarea id="viewDetailsAllowed" style="visibility:hidden; display:none;">$viewDetailsAllowed</textarea>
+	<textarea id="createEventsAllowed" style="visibility:hidden; display:none;">$createEventsAllowed</textarea>
 	<textarea id="gcalview" style="visibility:hidden; display:none;">$gcalview</textarea>
 	<textarea id="menu" style="visibility:hidden; display:none;">$menu</textarea>
-	
 	<br>
 	<br>
 	
@@ -37,7 +37,8 @@
 <script type='text/javascript'>
 	var accesstoken = '${accesstoken}';
 	var gcalid = '${gcalid}';
-	var editAllowed = '${editAllowed}';
+	var viewDetailsAllowed = '${viewDetailsAllowed}';
+	var createEventsAllowed = '${createEventsAllowed}';
 	var gcalview = '${gcalview}';
 	var menu = '${menu}';
 	

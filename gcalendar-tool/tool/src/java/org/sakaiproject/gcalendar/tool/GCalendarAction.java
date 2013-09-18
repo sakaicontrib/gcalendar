@@ -141,7 +141,8 @@ public class GCalendarAction extends PagedResourceActionII
 		String siteId = ToolManager.getCurrentPlacement().getContext();
 		Site site = null;
 		String accessToken = null;
-		boolean editAllowed = false;
+		boolean viewDetailsAllowed = false;
+		boolean createEventsAllowed = false;
 		boolean gcalview = false;
 		boolean hasGoogleAccount = true;
 		String permission = null; // no default, we should not get this far if no permissions are set
@@ -163,7 +164,7 @@ public class GCalendarAction extends PagedResourceActionII
 				if (accessToken == null) {
 					M_log.warn("buildDelegateAccessContext: " + "getGCalendar failed first try");
 					
-					// Use the owner's email and put into context "editAllowed = false"
+					// Use the owner's email and put into context "viewDetailsAllowed = false"
 					String ownerEmailId = site.getCreatedBy().getEmail();
 					M_log.debug("buildDelegateAccessContext: owner's email " + ownerEmailId );
 					accessToken = SakaiGCalendarService.getGCalendarAccessToken(gcalid, ownerEmailId);
@@ -171,7 +172,8 @@ public class GCalendarAction extends PagedResourceActionII
 						M_log.warn("buildDelegateAccessContext: " + "getGCalendar failed second try with owner email id " + ownerEmailId );
 						return "_noaccess";
 					}
-					editAllowed = false;
+					viewDetailsAllowed = false;
+					createEventsAllowed = false;
 					hasGoogleAccount = false;
 				}
 			}
@@ -187,21 +189,25 @@ public class GCalendarAction extends PagedResourceActionII
 	    	boolean isSuper = securityService.isSuperUser(currentUserId);
 	    	
 	    	if(isSuper || securityService.unlock(currentUserId, org.sakaiproject.site.api.SiteService.SECURE_UPDATE_SITE_MEMBERSHIP, siteServiceString  ) ) { 
-				editAllowed = true;
+				viewDetailsAllowed = true;
+				createEventsAllowed = true;
 				permission = org.sakaiproject.site.api.SiteService.SECURE_UPDATE_SITE_MEMBERSHIP;
 				if (isSuper)
 					hasGoogleAccount = true;
 			}
 			else if ( securityService.unlock(currentUserId, SakaiGCalendarServiceStaticVariables.SECURE_GCAL_EDIT, siteServiceString)) {
-				editAllowed = true;
+				viewDetailsAllowed = true;
+				createEventsAllowed = true;
 				permission = SakaiGCalendarServiceStaticVariables.SECURE_GCAL_EDIT;
 			}
 			else if ( securityService.unlock(currentUserId, SakaiGCalendarServiceStaticVariables.SECURE_GCAL_VIEW_ALL, siteServiceString)) {
-				editAllowed = true;
+				viewDetailsAllowed = true;
+				createEventsAllowed = false;
 				permission = SakaiGCalendarServiceStaticVariables.SECURE_GCAL_VIEW_ALL;
 			}
 			else if ( securityService.unlock(currentUserId, SakaiGCalendarServiceStaticVariables.SECURE_GCAL_VIEW, siteServiceString)) {
-				editAllowed = false;
+				viewDetailsAllowed = false;
+				createEventsAllowed = false;
 				gcalview = true;
 				permission = SakaiGCalendarServiceStaticVariables.SECURE_GCAL_VIEW;
 			}
@@ -216,7 +222,8 @@ public class GCalendarAction extends PagedResourceActionII
 			// if no google account - then read only in Sakai (i.e. no access to google calendar)
 			// override any previous permission values
 			if ( !hasGoogleAccount ) {
-				editAllowed = false;
+				viewDetailsAllowed = false;
+				createEventsAllowed = false;
 				M_log.warn( "User has no google account: " + currentUser );
 			}
 						
@@ -226,7 +233,8 @@ public class GCalendarAction extends PagedResourceActionII
 		    context.put("accesstoken", accessToken);
 	        context.put("gcalid", site.getProperties().getProperty("gcalid"));
 	        this.saved_gcalid = site.getProperties().getProperty("gcalid");
-	        context.put("editAllowed", editAllowed);
+	        context.put("viewDetailsAllowed", viewDetailsAllowed);
+	        context.put("createEventsAllowed", createEventsAllowed);
 	        context.put("gcalview", gcalview);
 	        context.put("menu", this.isOkToShowPermissionsButton(currentUserId, siteServiceString) );
 	        
