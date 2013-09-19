@@ -127,6 +127,7 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 		
 		try { 
 			// get the service account e-mail address and service account private key from property file
+			// this email account and key file are specific for your environment
 			if (SERVICE_ACCOUNT_EMAIL == null) {
 				SERVICE_ACCOUNT_EMAIL = m_serverConfigurationService.getString("google.service.account.email", "");
 			}
