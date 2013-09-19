@@ -1,7 +1,8 @@
 /*
  getGoogleCalendar
- Notes: The Math.floor((Math.random()*100)+1) in the ajax calls are to make sure that ID does not return
- the cached values for similar calls.
+ Notes: The Math.floor((Math.random()*100)+1) in the ajax calls are to make sure that Internet Explorer 8 and 9
+ do not return the cached values for similar calls. In theory, using cached:false should take care of this issue,
+ but, it did not in some of my earlier testing so I left it in.
  */
 
 var eventArray = []; // move globally
@@ -46,7 +47,7 @@ getGoogleCalendar = function(accesstoken, gcalid) {
         theme : true,       
         editable : editable, // allows or prohibits drag and drop (not event edit)
         header : {
-            left : 'prev,next today',
+            left : 'today prev,next',
             center : 'title',
             right : 'month,agendaWeek,agendaDay'
         },
@@ -440,7 +441,7 @@ function getTimeIso(dt, useLocalTimezone) {
 					+ pad(this.getUTCSeconds()) + 'Z';
 		};
 	}
-	// Modify to current timezone
+	// Modify to current timezone. Note: this will not react to Sakai's user's timezone change.
 	if (useLocalTimezone) {
 		dt = new Date(dt.getTime() - (dt.getTimezoneOffset() * 60 * 1000));
 	}

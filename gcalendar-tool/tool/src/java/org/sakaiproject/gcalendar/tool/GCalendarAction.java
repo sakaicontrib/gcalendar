@@ -73,10 +73,13 @@ import org.sakaiproject.exception.PermissionException;
  */
 public class GCalendarAction extends PagedResourceActionII
 {
+	// This property is used in object serialization.
 	private static final long serialVersionUID = -5477742481219305334L;
 	
 	private static final String PERMISSIONS_BUTTON_HANDLER = "doPermissions";
-	private static final String UPDATE_PERMISSIONS = "site.upd";
+	private static final String UPDATE_PERMISSIONS = "realm.upd";
+	private static final String EMBEDED_GOOGLE_CALENDAR_URL = "http://www.google.com/calendar/embed?src=";
+	private static final String TIMEZONE_TAG = "&ctz=";
 	
 	private String saved_gcalid = null;
 	
@@ -117,9 +120,9 @@ public class GCalendarAction extends PagedResourceActionII
 		if ( null != saved_gcalid && !saved_gcalid.isEmpty() ) {
 			// example of a link: 
 			//http://www.google.com/calendar/embed?src=collab.its.umich.edu_un8adj8phhfpi0ssvp8rcbsjgc@group.calendar.google.com&ctz=America/New_York
-			buffer = new StringBuilder("http://www.google.com/calendar/embed?src=");
+			buffer = new StringBuilder(EMBEDED_GOOGLE_CALENDAR_URL);
 			buffer.append(saved_gcalid);
-			buffer.append("&ctz=");
+			buffer.append(TIMEZONE_TAG);
 			buffer.append( TimeService.getLocalTimeZone().getID() );
 		} else {
 			template = "_nocalendar";
@@ -149,7 +152,7 @@ public class GCalendarAction extends PagedResourceActionII
 		
 		try {			
 			site = SiteService.getSite(siteId);
-			String gcalid = site.getProperties().getProperty("gcalid");
+			String gcalid = site.getProperties().getProperty(SakaiGCalendarServiceStaticVariables.GCALID);
 			
 			if (gcalid == null) {
 				// save the Google Calendar Id to the site property and return the Access Token
@@ -163,8 +166,9 @@ public class GCalendarAction extends PagedResourceActionII
 				accessToken = SakaiGCalendarService.getGCalendarAccessToken(gcalid);
 				if (accessToken == null) {
 					M_log.warn("buildDelegateAccessContext: " + "getGCalendar failed first try");
-					
+					// If the user is an authorized Google user (i.e. does not have a google email account in your service domain)
 					// Use the owner's email and put into context "viewDetailsAllowed = false"
+					// Use the owner's email because the site creator is the owner in Google.
 					String ownerEmailId = site.getCreatedBy().getEmail();
 					M_log.debug("buildDelegateAccessContext: owner's email " + ownerEmailId );
 					accessToken = SakaiGCalendarService.getGCalendarAccessToken(gcalid, ownerEmailId);
@@ -186,6 +190,12 @@ public class GCalendarAction extends PagedResourceActionII
 	    	// This is a hierarchical permission structure for Google Calendar permissions
 	    	// Since these are all check boxes, this sets the permissions to the highest level
 	    	// and the lower levels are suppressed (i.e. superuser/site update overrides eEdit overrides view.all overrides view).
+	    	// These flags are used to control access in Full Calendar. 
+	    	// Permissions set in Google Calendar are used to control access in Google Calendar.
+	    	//
+	    	// viewDetailsAllowed = the user can see the details of an event ~ gcal.view.all
+	    	// createEventsAllowed = the user can see the details and create events ~ gcal.edit and site.upd.site.mbrshp
+	    	// gcalview = the user can only view events, see only free/busy ~ gcal.view
 	    	boolean isSuper = securityService.isSuperUser(currentUserId);
 	    	
 	    	if(isSuper || securityService.unlock(currentUserId, org.sakaiproject.site.api.SiteService.SECURE_UPDATE_SITE_MEMBERSHIP, siteServiceString  ) ) { 
@@ -235,8 +245,8 @@ public class GCalendarAction extends PagedResourceActionII
 			buildMenu(portlet, context, rundata, this.isOkToShowPermissionsButton(currentUserId, siteServiceString));
 			
 		    context.put("accesstoken", accessToken);
-	        context.put("gcalid", site.getProperties().getProperty("gcalid"));
-	        this.saved_gcalid = site.getProperties().getProperty("gcalid");
+	        context.put(SakaiGCalendarServiceStaticVariables.GCALID, site.getProperties().getProperty(SakaiGCalendarServiceStaticVariables.GCALID));
+	        this.saved_gcalid = site.getProperties().getProperty(SakaiGCalendarServiceStaticVariables.GCALID);
 	        context.put("viewDetailsAllowed", viewDetailsAllowed);
 	        context.put("createEventsAllowed", createEventsAllowed);
 	        context.put("gcalview", gcalview);
@@ -260,7 +270,7 @@ public class GCalendarAction extends PagedResourceActionII
 	private boolean isOkToShowPermissionsButton(String currentUserId, String siteServiceString)
 	{
 		//if (SiteService.allowUpdateSite(ToolManager.getCurrentPlacement().getContext())) // this did not work - always returned true
-		boolean isOkToShowPermissions = securityService.unlock(currentUserId, "realm.upd", siteServiceString  );
+		boolean isOkToShowPermissions = securityService.unlock(currentUserId, UPDATE_PERMISSIONS, siteServiceString  );
 		return isOkToShowPermissions;
 	}
 	
