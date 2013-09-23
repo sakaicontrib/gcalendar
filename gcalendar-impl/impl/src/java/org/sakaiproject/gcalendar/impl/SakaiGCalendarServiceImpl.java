@@ -446,54 +446,54 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 			if ( null == siteCreatorEmailAddress || siteCreatorEmailAddress.isEmpty() ) {
 				// TODO: error message to the user here?
 				M_log.error("Missing email address for site creator - unable to create google calender. Site " + site.getTitle() + " creator " + site.getCreatedBy().getSortName() );
+				return;
+			}
+			
+			// Create ACL using site creator email
+			GoogleCredential credential = getGoogleCredential(siteCreatorEmailAddress);
+			
+			if (credential == null) {
+				M_log.error("addUserToAccessControlList: bad credentials for " + siteCreatorEmailAddress);
+				return; // user not authorized
+			}
+
+			client = getGoogleClient( credential );
+				
+			String currentUserEmailAddress = getUserEmailAddress();
+			AclRule rule = new AclRule();
+			Scope scope = new Scope();
+
+			scope.setType(SakaiGCalendarServiceStaticVariables.RULE_SCOPE_TYPE_USER);
+			scope.setValue(currentUserEmailAddress);
+			rule.setScope(scope);
+			
+			// Determine Google calendar permissions based on Sakai permissions
+			if ( permission.equals(org.sakaiproject.site.api.SiteService.SECURE_UPDATE_SITE_MEMBERSHIP) || isSuper) {
+				rule.setRole(SakaiGCalendarServiceStaticVariables.RULE_ROLE_OWNER);
+			}
+			else if ( permission.equals(SakaiGCalendarServiceStaticVariables.SECURE_GCAL_EDIT)) {
+				rule.setRole(SakaiGCalendarServiceStaticVariables.RULE_ROLE_WRITER);
+			}
+			else if ( permission.equals(SakaiGCalendarServiceStaticVariables.SECURE_GCAL_VIEW_ALL)) {
+				rule.setRole(SakaiGCalendarServiceStaticVariables.RULE_ROLE_READER);
+			}
+			else if ( permission.equals(SakaiGCalendarServiceStaticVariables.SECURE_GCAL_VIEW)) {
+				rule.setRole(SakaiGCalendarServiceStaticVariables.RULE_ROLE_FREEBUSYREADER);
 			}
 			else {
-				// Create ACL using site creator email
-				GoogleCredential credential = getGoogleCredential(siteCreatorEmailAddress);
-				
-				if (credential == null) {
-					M_log.error("addUserToAccessControlList: bad credentials for " + siteCreatorEmailAddress);
-					return; // user not authorized
-				}
-
-				client = getGoogleClient( credential );
-					
-				String currentUserEmailAddress = getUserEmailAddress();
-				AclRule rule = new AclRule();
-				Scope scope = new Scope();
-	
-				scope.setType(SakaiGCalendarServiceStaticVariables.RULE_SCOPE_TYPE_USER);
-				scope.setValue(currentUserEmailAddress);
-				rule.setScope(scope);
-				
-				// Determine Google calendar permissions based on Sakai permissions
-				if ( permission.equals(org.sakaiproject.site.api.SiteService.SECURE_UPDATE_SITE_MEMBERSHIP) || isSuper) {
-					rule.setRole(SakaiGCalendarServiceStaticVariables.RULE_ROLE_OWNER);
-				}
-				else if ( permission.equals(SakaiGCalendarServiceStaticVariables.SECURE_GCAL_EDIT)) {
-					rule.setRole(SakaiGCalendarServiceStaticVariables.RULE_ROLE_WRITER);
-				}
-				else if ( permission.equals(SakaiGCalendarServiceStaticVariables.SECURE_GCAL_VIEW_ALL)) {
-					rule.setRole(SakaiGCalendarServiceStaticVariables.RULE_ROLE_READER);
-				}
-				else if ( permission.equals(SakaiGCalendarServiceStaticVariables.SECURE_GCAL_VIEW)) {
-					rule.setRole(SakaiGCalendarServiceStaticVariables.RULE_ROLE_FREEBUSYREADER);
-				}
-				else {
-					rule.setRole(SakaiGCalendarServiceStaticVariables.RULE_ROLE_FREEBUSYREADER); // should never fall through
-				}
-				// TODO: although this seems to work, we should update the role if it already exists AND we should test the return
-				try {
-					AclRule createdRule = client.acl().insert(gcalid, rule).execute();
-				} catch (IOException e) {
-					M_log.error("addUserToAccessControlList - IOException: " + e.getMessage());
-					return;
-				}
-				
-				// Save gcalid in user preferences (so we know the user has been added to the google calendar ACL)		
-				saveGCalProperty(currentUserId, gcalid, permission);
-	    	}
-		}
+				rule.setRole(SakaiGCalendarServiceStaticVariables.RULE_ROLE_FREEBUSYREADER); // should never fall through
+			}
+			// TODO: although this seems to work, we should update the role if it already exists AND we should test the return
+			try {
+				AclRule createdRule = client.acl().insert(gcalid, rule).execute();
+			} catch (IOException e) {
+				M_log.error("addUserToAccessControlList - IOException: " + e.getMessage());
+				return;
+			}
+			
+			// Save gcalid in user preferences (so we know the user has been added to the google calendar ACL)		
+			saveGCalProperty(currentUserId, gcalid, permission);
+    	}
     }
     
     /**
