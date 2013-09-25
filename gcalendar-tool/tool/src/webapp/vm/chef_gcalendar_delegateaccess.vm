@@ -75,8 +75,8 @@
 
 <div class="newEventTemplate" style="display:none">
 	<p>$tlang.getString("gcal.event.date") <span class="newEventDate"></span></p>
-	<p><label for="newEventTitle">$tlang.getString("gcal.event.title") </label><input type="text" class="newEventTitle"/></p>
-	<p><label for="newEventAllDay">$tlang.getString("gcal.event.allday") </label><input type="checkbox" checked="checked" class="newEventAllDay"/></p>
+	<p><label for="newEventTitle">$tlang.getString("gcal.event.title") </label><input type="text" id="newEventTitle" class="newEventTitle"/></p>
+	<p><label for="newEventAllDay">$tlang.getString("gcal.event.allday") </label><input type="checkbox" checked="checked" id = "newEventAllDay" class="newEventAllDay"/></p>
 	<div class="newEventTimeClass">
 		<table>
 			<tr>
@@ -84,14 +84,14 @@
 					<label for="newEventStartTime" style="vertical-align:top">$tlang.getString("gcal.event.start") </label>
 				</td>
 				<td style="width: 90px">
-					<input type="text" class="newEventStartTimeText" size="7"/>
+					<input type="text" id = "newEventStartTime" class="newEventStartTimeText" size="7"/>
 					<input type="hidden" class="newEventStartTimeValue" size="7"/>				
 				</td>
 				<td>
 					<label for="newEventEndTime" style="vertical-align:top">$tlang.getString("gcal.event.end") </label>
 				</td>
 				<td style="width: 90px">
-					<input type="text" class="newEventEndTimeText" size="7"/>
+					<input type="text" id="newEventEndTime" class="newEventEndTimeText" size="7"/>
 					<input type="hidden" class="newEventEndTimeValue" size="7"/>
 				</td>
 			</tr>	

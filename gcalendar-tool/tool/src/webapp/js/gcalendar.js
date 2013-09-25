@@ -199,6 +199,10 @@ getGoogleCalendar = function(accesstoken, gcalid) {
                 var $dialogDiv = $('<div id="newEvent"></div>').appendTo(document.body);
                 $dialogDiv.html($('.newEventTemplate').html());               
                 
+                // need to remove the event so there are not two fields with the same name on the page (for accessibility)
+                var temp = $('.newEventTemplate').html();
+                $('.newEventTemplate').html("");
+
                 $dialogDiv.dialog({
                     width : 580,
                     height : 400,
@@ -210,7 +214,9 @@ getGoogleCalendar = function(accesstoken, gcalid) {
                     title : "New Event",
                     close : function(event, ui) {
                         // Clean up: remove dialog, its children, and the events from DOM
-                        $('#newEvent').remove();                      
+                        $('#newEvent').remove(); 
+                        // when we are all done, put the template back
+                        $('.newEventTemplate').html(temp);
                     }
                 });
                 
