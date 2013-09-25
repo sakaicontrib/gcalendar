@@ -75,12 +75,17 @@
 		<dependency>
 			<groupId>com.google.api-client</groupId>
 			<artifactId>google-api-client</artifactId>
-			<version>1.10.3-beta</version>
+			<version>1.17.0-rc</version>
 		</dependency>
 		<dependency>
 			<groupId>com.google.apis</groupId>
 			<artifactId>google-api-services-calendar</artifactId>
-			<version>v3-rev11-1.7.2-beta</version>
+			<version>v3-rev62-1.17.0-rc</version>
+		</dependency>
+		<dependency>
+			<groupId>com.google.http-client</groupId>
+			<artifactId>google-http-client-jackson2</artifactId>
+			<version>1.17.0-rc</version>
 		</dependency>
 	</dependencies>
 
