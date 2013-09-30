@@ -32,6 +32,7 @@ import java.util.Vector;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.http.HttpException;
 import org.sakaiproject.authz.api.FunctionManager;
 import org.sakaiproject.authz.api.SecurityService;
 import org.sakaiproject.component.api.ServerConfigurationService;
@@ -73,6 +74,7 @@ import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.Lists;
 import com.google.api.services.calendar.Calendar;
 import com.google.api.services.calendar.CalendarScopes;
+import com.google.api.services.calendar.model.Acl;
 import com.google.api.services.calendar.model.AclRule;
 import com.google.api.services.calendar.model.AclRule.Scope;
 import com.google.api.services.calendar.model.CalendarListEntry;
@@ -112,6 +114,12 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 	private static String SERVICE_ACCOUNT_EMAIL = null;
 	/** Service account private key */
 	private static String PRIVATE_KEY = null;
+	
+	/** Strings for setting Google ACL's */
+	private static final String DOMAIN = "domain";
+	private static final String COLON = ":";
+	private static final String ACL_NONE = "none";
+	private static final String ACL_DEFAULT = "default";
 	
 	private FunctionManager functionManager;
 	public void setFunctionManager(FunctionManager functionManager) {
@@ -359,13 +367,91 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 
 	private com.google.api.services.calendar.model.Calendar createGoogleCalendar(Site site, Calendar client) throws IOException {
 
+		String gcalID;
+		
 		com.google.api.services.calendar.model.Calendar calendar = new com.google.api.services.calendar.model.Calendar();
 
 		calendar.setSummary(site.getTitle());
 		calendar.setTimeZone( TimeService.getLocalTimeZone().getID() );
+		calendar.setKind("calendar#calendar");
 
 		com.google.api.services.calendar.model.Calendar createdCalendar = client.calendars().insert(calendar).execute();
+		
+		if ( createdCalendar == null )
+			return null;
+		
+		// Set permissions on the calendar for global sharing
+		// First retrieve the access rule from the API.
+		// Insert a new one if it exists (updating did not work well)
+		gcalID = createdCalendar.getId();
+		
+		try {
+			AclRule ruleDefault = client.acl().get(gcalID, ACL_DEFAULT).execute();
+			M_log.debug(" ruleDefault : " + ruleDefault.toPrettyString());
+			
+			
+			// check to see if we need to update the default ACL
+			if ( ruleDefault != null && !ruleDefault.getRole().isEmpty()) {
+				Scope scopeDefault = new Scope();
+		
+				scopeDefault.setType(ACL_DEFAULT);
+				scopeDefault.setValue(ACL_NONE);
+				
+				ruleDefault = new AclRule();
+				ruleDefault.setScope(scopeDefault);
+				ruleDefault.setRole(ACL_NONE); 
 
+				AclRule rule = client.acl().insert(gcalID, ruleDefault).execute();
+				if ( rule == null )
+					M_log.error( "Setting Default Google Calendar ACL failed for Calendar ID: " + gcalID);
+			}	   
+		} catch (IOException e ){
+			// Ok to continue
+			int pos404 = e.getMessage().indexOf("404");
+			// make sure it 404 is early in the message 
+			if(pos404 >= 0 && pos404 <= 20 ) {
+				// okay to continue - does not have the permission set
+			} 
+			else {
+				M_log.error("Getting default Calendar ACL: " + e.getMessage());
+			}
+		} catch ( Exception eee) {
+			M_log.error("Getting default Calendar ACL: " + eee.getMessage());
+		}
+		
+		
+		// and for the domain
+		try {
+			String emailAddress = getUserEmailAddress();
+			if ( null != emailAddress) {
+				String emailDomain = emailAddress.substring(emailAddress.indexOf('@') + 1 );
+				String aclDomainString = DOMAIN + COLON + emailDomain; // domain:emaildomain
+				AclRule ruleDomain = client.acl().get(gcalID, aclDomainString).execute();
+				
+				// Check to see if we need to update the domain ACL
+				if ( ruleDomain != null && !ruleDomain.getRole().isEmpty() ) {
+					Scope scopeDomain = new Scope();
+			
+					scopeDomain.setType(DOMAIN);
+					scopeDomain.setValue(emailDomain);
+					
+					AclRule ruleDefault = new AclRule();
+					ruleDefault.setScope(scopeDomain);
+					ruleDefault.setRole(ACL_NONE); 
+			
+					//AclRule updatedDomain = client.acl().update(gcalID, ruleDefault.getId(), ruleDefault).execute();
+					AclRule rule = client.acl().insert(gcalID, ruleDefault).execute();
+					if ( null == rule || rule.isEmpty() ) {
+						M_log.error("Failed to update ACL for domain associated with Calendar ID:" + gcalID);
+					}
+				}
+				else {
+					M_log.error("Google Calendar Creator does not have an associated email address for Calendar ID" + gcalID);
+				}
+			}
+		} catch ( Exception e ) {
+			M_log.error("Error setting the Google domain permissions:" + e.getMessage());
+		}
 		return createdCalendar;
 	}
 	
