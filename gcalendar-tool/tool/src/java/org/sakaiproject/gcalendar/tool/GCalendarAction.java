@@ -324,53 +324,6 @@ public class GCalendarAction extends PagedResourceActionII
 
 	} // doPermissions
 	
-	/**
-	 * Get the proper state for this instance (if portlet id is known).
-	 * 
-	 * @param peid
-	 *        The portlet id.
-	 * @param rundata
-	 *        The Jetspeed (Turbine) rundata associated with the request.
-	 * @param stateClass
-	 *        The Class of the ControllerState to find / create.
-	 * @return The proper state object for this instance.
-	 */
-	protected ControllerState getState(String peid, RunData rundata, Class stateClass)
-	{
-		if (peid == null)
-		{
-			M_log.warn(this + ".getState(): peid null");
-			return null;
-		}
-
-		try
-		{
-			// get the PortletSessionState
-			SessionState ss = ((JetspeedRunData) rundata).getPortletSessionState(peid);
-
-			// get the state object
-			ControllerState state = (ControllerState) ss.getAttribute("state");
-
-			if (state != null) return state;
-
-			// if there's no "state" object in there, make one
-			state = (ControllerState) stateClass.newInstance();
-			state.setId(peid);
-
-			// remember it!
-			ss.setAttribute("state", state);
-
-			return state;
-		}
-		catch (Exception e)
-		{
-			M_log.warn(this+ ".getState", e);
-		}
-
-		return null;
-
-	} // getState
-	
 	@Override
 	protected List readResourcesPage(SessionState state, int first, int last) {
 		// TODO Auto-generated method stub
