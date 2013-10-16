@@ -42,6 +42,7 @@ import org.sakaiproject.cheftool.menu.MenuDivider;
 import org.sakaiproject.cheftool.menu.MenuEntry;
 import org.sakaiproject.cheftool.menu.MenuImpl;
 import org.sakaiproject.entity.api.Reference;
+import org.sakaiproject.entity.api.ResourceProperties;
 import org.sakaiproject.entity.cover.EntityManager;
 import org.sakaiproject.event.api.SessionState;
 import org.sakaiproject.exception.IdUnusedException;
@@ -54,10 +55,11 @@ import org.sakaiproject.user.cover.UserDirectoryService;
 import org.sakaiproject.util.ResourceLoader;
 import org.sakaiproject.time.cover.TimeService;
 import org.sakaiproject.user.api.ContextualUserDisplayService;
+import org.sakaiproject.user.api.Preferences;
+import org.sakaiproject.user.api.PreferencesEdit;
 import org.sakaiproject.user.api.User;
 import org.sakaiproject.user.api.UserNotDefinedException;
 import org.sakaiproject.user.cover.UserDirectoryService;
-//? import org.sakaiproject.announcement.tool.AnnouncementActionState;
 import org.sakaiproject.authz.api.AuthzGroup;
 import org.sakaiproject.authz.api.PermissionsHelper;
 import org.sakaiproject.authz.api.SecurityService;
@@ -147,13 +149,13 @@ public class GCalendarAction extends PagedResourceActionII
 		boolean viewDetailsAllowed = false;
 		boolean createEventsAllowed = false;
 		boolean gcalview = false;
-		boolean hasGoogleAccount = true;
+		boolean hasGoogleAccount = false;
 		String permission = null; // no default, we should not get this far if no permissions are set
 		
 		try {			
 			site = SiteService.getSite(siteId);
 			String gcalid = site.getProperties().getProperty(SakaiGCalendarServiceStaticVariables.GCALID);
-			
+			// we need the gcalid to continue
 			if (gcalid == null) {
 				// save the Google Calendar Id to the site property and return the Access Token
 				accessToken = SakaiGCalendarService.saveGoogleCalendarInfo(site);
@@ -161,31 +163,14 @@ public class GCalendarAction extends PagedResourceActionII
 					M_log.warn("buildDelegateAccessContext: " + "saveGoogleCalendarInfo failed");
 					return "_noaccess";
 				}
-			} else {
-				// get the Google Calendar Access Token
-				accessToken = SakaiGCalendarService.getGCalendarAccessToken(gcalid);
-				if (accessToken == null) {
-					M_log.warn("buildDelegateAccessContext: " + "getGCalendar failed first try");
-					// If the user is an authorized Google user (i.e. does not have a google email account in your service domain)
-					// Use the owner's email and put into context "viewDetailsAllowed = false"
-					// Use the owner's email because the site creator is the owner in Google.
-					String ownerEmailId = site.getCreatedBy().getEmail();
-					M_log.debug("buildDelegateAccessContext: owner's email " + ownerEmailId );
-					accessToken = SakaiGCalendarService.getGCalendarAccessToken(gcalid, ownerEmailId);
-					if ( accessToken == null ) {
-						M_log.warn("buildDelegateAccessContext: " + "getGCalendar failed second try with owner email id " + ownerEmailId );
-						return "_noaccess";
-					}
-					viewDetailsAllowed = false;
-					createEventsAllowed = false;
-					hasGoogleAccount = false;
-				}
 			}
 			
-			// If the user IsSuperUser or has gcal.edit, they can edit
 			User currentUser = UserDirectoryService.getCurrentUser();
 	    	String currentUserId = currentUser.getId();
 	    	String siteServiceString = SiteService.siteReference(siteId);
+	    	
+	    	User user = UserDirectoryService.getCurrentUser();
+			String emailAddress = user.getEmail();
 	    	
 	    	// This is a hierarchical permission structure for Google Calendar permissions
 	    	// Since these are all check boxes, this sets the permissions to the highest level
@@ -196,15 +181,15 @@ public class GCalendarAction extends PagedResourceActionII
 	    	// viewDetailsAllowed = the user can see the details of an event ~ gcal.view.all
 	    	// createEventsAllowed = the user can see the details and create events ~ gcal.edit and site.upd.site.mbrshp
 	    	// gcalview = the user can only view events, see only free/busy ~ gcal.view
-	    	boolean isSuper = securityService.isSuperUser(currentUserId);
 	    	
+	    	boolean isSuper = securityService.isSuperUser(currentUserId);
+
+	    	// If the user IsSuperUser or has gcal.edit, they can edit
 	    	if(isSuper || securityService.unlock(currentUserId, org.sakaiproject.site.api.SiteService.SECURE_UPDATE_SITE_MEMBERSHIP, siteServiceString  ) ) { 
 				viewDetailsAllowed = true;
 				createEventsAllowed = true;
 				gcalview = true;
 				permission = org.sakaiproject.site.api.SiteService.SECURE_UPDATE_SITE_MEMBERSHIP;
-				if (isSuper)
-					hasGoogleAccount = true;
 			}
 			else if ( securityService.unlock(currentUserId, SakaiGCalendarServiceStaticVariables.SECURE_GCAL_EDIT, siteServiceString)) {
 				viewDetailsAllowed = true;
@@ -225,22 +210,42 @@ public class GCalendarAction extends PagedResourceActionII
 				permission = SakaiGCalendarServiceStaticVariables.SECURE_GCAL_VIEW;
 			}
 			
-			// If the current user is NOT the site creator AND they have a good Google Email Account
-			// Adding user to google calendar acl (access control list)
-	    	// Site creator permissions can not be updated in Google
-			if (!site.getCreatedBy().getEid().equalsIgnoreCase(UserDirectoryService.getCurrentUser().getEid()) && hasGoogleAccount) {
+	    	// Check to see if the user is a valid user (i.e. they have a google calendar of their own)	    	
+	    	hasGoogleAccount = SakaiGCalendarService.isValidGoogleUser(emailAddress);
+			
+			// If the current user is NOT the site creator AND they have a good Google Email Account AND they are not a super user
+			// 		Add or update the user's Google Calendar permissions acl (access control list).
+	    	// We do not want to update super users permissions in Google because that would lead to support staff being added many 
+	    	// Google Calendars when they view the calendar and are only helping users with issues.
+	    	// Note that the Site creator permissions cannot be updated in Google
+			if (!site.getCreatedBy().getEid().equalsIgnoreCase(UserDirectoryService.getCurrentUser().getEid()) && hasGoogleAccount && !isSuper) {
 				SakaiGCalendarService.addUserToAccessControlList(site, permission);
 			}
 			
-			// if no google account - then read only in Sakai (i.e. no access to google calendar)
-			// override any previous permission values
+			// if no google account - then use the permissions set above to control access to the calendar in Sakai.
 			if ( !hasGoogleAccount ) {
-				viewDetailsAllowed = false;
-				createEventsAllowed = false;
-				gcalview = false;
 				M_log.warn( "User has no google account: " + currentUser );
 			}
-						
+			
+			// Get the access token for the user or the delegated access of the site creator (make into a method)
+			if ( accessToken == null ) {
+				// save the Google Calendar Id to the site property and return the Access Token
+				// get the Google Calendar Access Token
+				accessToken = SakaiGCalendarService.getGCalendarAccessToken(gcalid);
+				if (accessToken == null) {
+					M_log.warn("buildDelegateAccessContext: " + "getGCalendar failed first try");
+					// If the user is not an authorized Google user (i.e. does not have a google email account in your service domain)
+					// Use the owner's email because the site creator is the owner in Google and will always have access to the calendar.
+					String ownerEmailId = site.getCreatedBy().getEmail();
+					accessToken = SakaiGCalendarService.getGCalendarAccessToken(gcalid, ownerEmailId);
+					if ( accessToken == null ) {
+						M_log.error("buildDelegateAccessContext: " + "getGCalendar failed second try with owner email id " + ownerEmailId );
+						return "_noaccess";
+					}
+					hasGoogleAccount = false;
+				}
+	    	}
+			
 			// build the menu
 			buildMenu(portlet, context, rundata, this.isOkToShowPermissionsButton(currentUserId, siteServiceString));
 			
