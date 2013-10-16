@@ -152,6 +152,33 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 			return null;
 		}
 	}
+	
+	public boolean isValidGoogleUser( String emailID ) {
+		
+		Calendar client;
+		
+		GoogleCredential cred = getGoogleCredential( emailID);
+		if ( cred == null )
+			return false;
+		
+		// At this point credential has no Access Token
+		client = getGoogleClient( cred );
+
+		// get the primary Google calendar
+		// This line of code fill in the Access Token
+		try {
+			com.google.api.services.calendar.model.Calendar calendar = client.calendars().get("primary").execute();
+			// if the user has not primary google calendar then they are not a Google user
+			if ( calendar == null )
+				return false;
+			
+		} catch (IOException e) {
+			M_log.debug("getGCalendarAccessToken2 - IOException: " + e.getMessage());
+			return false;
+		}				
+		// user is a valid Google user		
+		return true;
+	}
 
 	@Override
 	public void contextCreated(String context, boolean toolPlacement) {
@@ -216,7 +243,7 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 			return false; // site should not be created with out this information
 		}
 
-		// if the Google Calendar already created and the Google Calendar Id already saved in the site property
+		// if the Google Calendar has already been created and the Google Calendar Id has already been saved in the site property
 		// return true
 		// else, create the calendar in google.
 		if (site.getProperties().getProperty(SakaiGCalendarServiceStaticVariables.GCALID) != null) { 
@@ -274,7 +301,7 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 			}
 			return credential.getAccessToken();
 		}
-		return null;
+		return null; // Google calendar does not exist
 	}
 
 	/**
@@ -314,10 +341,10 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 			}
 
 		} catch (IOException e) {
-			M_log.error("saveGoogleCalendarInfo: " + e.getMessage());
+			M_log.error("getGoogleCalendarInfo: " + e.getMessage());
 			return null;
 		} catch (Exception e) {
-			M_log.error("saveGoogleCalendarInfo: " + e.getMessage());
+			M_log.error("getGoogleCalendarInfo: " + e.getMessage());
 			return null;
 		}
 		
@@ -406,17 +433,17 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 					M_log.error( "Setting Default Google Calendar ACL failed for Calendar ID: " + gcalID);
 			}	   
 		} catch (IOException e ){
-			// Ok to continue
+			// If the exception is a 404 - page not found, then that means that the permission is not set in Google
 			int pos404 = e.getMessage().indexOf("404");
-			// make sure it 404 is early in the message 
+			// make sure that 404 is early in the message 
 			if(pos404 >= 0 && pos404 <= 20 ) {
-				// okay to continue - does not have the permission set
+				// okay to continue - Google does not have the permission set
 			} 
 			else {
-				M_log.error("Getting default Calendar ACL: " + e.getMessage());
+				M_log.error("Error setting the default Calendar ACL: " + e.getMessage());
 			}
 		} catch ( Exception eee) {
-			M_log.error("Getting default Calendar ACL: " + eee.getMessage());
+			M_log.error("Setting default Calendar ACL: " + eee.getMessage());
 		}
 		
 		
@@ -449,8 +476,18 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 					M_log.error("Google Calendar Creator does not have an associated email address for Calendar ID" + gcalID);
 				}
 			}
-		} catch ( Exception e ) {
-			M_log.error("Error setting the Google domain permissions:" + e.getMessage());
+		} catch (IOException e ){
+			// If the exception is a 404 - page not found, then that means that the permission is not set in Google
+			int pos404 = e.getMessage().indexOf("404");
+			// make sure that 404 is early in the message 
+			if(pos404 >= 0 && pos404 <= 20 ) {
+				// okay to continue - Google does not have the permission set
+			} 
+			else {
+				M_log.error("Error setting the domain Calendar ACL: " + e.getMessage());
+			}
+		} catch ( Exception eee ) {
+			M_log.error("Error setting the Google domain permissions:" + eee.getMessage());
 		}
 		return createdCalendar;
 	}
