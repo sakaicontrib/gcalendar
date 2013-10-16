@@ -24,7 +24,6 @@ import org.sakaiproject.entity.api.Entity;
 import org.sakaiproject.entity.api.EntityProducer;
 import org.sakaiproject.site.api.Site;
 
-
 public interface SakaiGCalendarService extends EntityProducer {
 	
 	/**
@@ -59,8 +58,17 @@ public interface SakaiGCalendarService extends EntityProducer {
 	 * Adding user to google calendar acl (access control list)
 	 * 
 	 * @param Site
-	 * @param Permission (gcal.view, gcal.view.all, gcalview.edit, or site.upd.site.mbrshp )
+	 * @param Permission (gcal.view, gcal.view.all, gcal.view.edit, or site.upd.site.mbrshp )
 	 *        
 	 */
 	public void addUserToAccessControlList(Site site, String perm);
+	
+	/**
+	 * Is the user a valid Google user?
+	 * 
+	 * @param String User's email ID
+	 * @return boolean true if valid and false if not valid
+	 *        
+	 */
+	public boolean isValidGoogleUser(String userid);
 }

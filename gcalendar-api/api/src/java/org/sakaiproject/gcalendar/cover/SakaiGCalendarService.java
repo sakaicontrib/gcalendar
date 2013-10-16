@@ -104,4 +104,19 @@ public class SakaiGCalendarService    {
 		service.addUserToAccessControlList(site, perm);
 	}
 	
+	/**
+	 * Is the user a valid Google user?
+	 * 
+	 * @param String User's email ID
+	 * @return boolean true if valid and false if not valid
+	 *        
+	 */
+	public static boolean isValidGoogleUser(String userid) {
+			org.sakaiproject.gcalendar.api.SakaiGCalendarService service = getInstance();
+			if (service == null) {
+				return false;
+			}
+					 
+			return service.isValidGoogleUser(userid);
+		}
 }
