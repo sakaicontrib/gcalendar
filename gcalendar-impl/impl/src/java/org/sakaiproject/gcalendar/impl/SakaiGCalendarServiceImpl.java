@@ -131,7 +131,7 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 		this.securityService = securityService;
 	}
 	/** Authorizes the service account to access user's protected data. */
-	public GoogleCredential getGoogleCredential(String userid) {		
+	private GoogleCredential getGoogleCredential(String userid) {		
 		
 		try { 
 			// get the service account e-mail address and service account private key from property file
@@ -147,7 +147,7 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 			return credential;
 
 		} catch (Exception e) {
-			// return true if catch exception so we will not create a google calendar
+			// return null if catch exception so we will not create a google calendar
 			M_log.error("getGoogleCredential: " + e.getMessage());
 			return null;
 		}
@@ -183,21 +183,21 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 	@Override
 	public void contextCreated(String context, boolean toolPlacement) {
 
-		if (toolPlacement) {
-			boolean okToCreate = okToCreateGoogleCalendar(context);
-			if (okToCreate) {
-				enableGCalendar(context);
-			}
-		}
+		contextHelper(context, toolPlacement);
 	}
 
 	@Override
 	public void contextUpdated(String context, boolean toolPlacement) {
 
+		contextHelper(context, toolPlacement);
+	}
+	
+	private void contextHelper(String context, boolean toolPlacement ) {
 		if (toolPlacement) {
-			boolean okToCreate = okToCreateGoogleCalendar(context);
+			String emailAddress = getUserEmailAddress();
+			boolean okToCreate = okToCreateGoogleCalendar(context, emailAddress);
 			if (okToCreate) {
-				enableGCalendar(context);
+				enableGCalendar(context, emailAddress);
 			}
 		}
 	}
@@ -228,13 +228,13 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 	 * @return true if it is okay to create the google calendar
 	 * 
 	 */
-	private boolean okToCreateGoogleCalendar(String context) {
+	private boolean okToCreateGoogleCalendar(String context, String emailAddress) {
 		
 		Site site = null;
 		String siteTitle = null;
 		String gcalid = null;
 		
-		// get site and site title
+		// get site and site title. We can not get here unless the site has been published.
 		try {
 			site = m_siteService.getSite(context);
 			siteTitle = site.getTitle();
@@ -248,15 +248,13 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 		// else, create the calendar in google.
 		if (site.getProperties().getProperty(SakaiGCalendarServiceStaticVariables.GCALID) != null) { 
 			return false;
-		} else {
-			String emailAddress = getUserEmailAddress();
-			
+		} else {		
 			GoogleCredential credential = getGoogleCredential(emailAddress);
 			if (credential == null) {
 				M_log.warn(this + " okToCreateGoogleCalendar - Not Authorized");
 				return false; // user not authorized - do not create calendar
 			}
-			gcalid = getGoogleCalendarID(siteTitle, emailAddress, credential);
+			gcalid = getGoogleCalendarID(siteTitle, credential);
 			
 			if (null != gcalid)
 				return false;
@@ -283,7 +281,7 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 			return null; // user not authorized - do not return access token
 		}
 		
-		gcalid = getGoogleCalendarID(siteTitle, emailAddress, credential);
+		gcalid = getGoogleCalendarID(siteTitle, credential);
 
 		if ( null != gcalid ) {
 			// add gcalid as the Sakai site property
@@ -307,13 +305,13 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 	/**
 	 * Get the Google Calendar ID from Google
 	 * 
-	 * @param String Site ID
+	 * @param String Site Title
 	 * @param String Email ID
 	 * @param String Google Credentials
 	 * @return String Google Calendar ID or null, if not found
 	 * 
 	 */
-	public String getGoogleCalendarID(String siteTitle, String emailAddress, GoogleCredential credential) {
+	private String getGoogleCalendarID(String siteTitle, GoogleCredential credential) {
 
 		String gcalid = null;
 		Calendar client;
@@ -357,11 +355,10 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 	 * @param context site identifier
 	 * 
 	 */
-	private void enableGCalendar(String context) {
+	private void enableGCalendar(String context, String emailAddress ) {
 
 		com.google.api.services.calendar.model.Calendar siteGCalendar = null;
 		
-		String emailAddress = getUserEmailAddress();
 		Calendar client;
 		
 		GoogleCredential credential = getGoogleCredential(emailAddress);
@@ -400,7 +397,7 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 
 		calendar.setSummary(site.getTitle());
 		calendar.setTimeZone( TimeService.getLocalTimeZone().getID() );
-		calendar.setKind("calendar#calendar");
+		calendar.setKind("calendar#calendar"); // this string is a special string and is defined by Google. There are other kind strings.
 
 		com.google.api.services.calendar.model.Calendar createdCalendar = client.calendars().insert(calendar).execute();
 		
