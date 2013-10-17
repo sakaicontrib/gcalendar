@@ -168,9 +168,8 @@ public class GCalendarAction extends PagedResourceActionII
 			User currentUser = UserDirectoryService.getCurrentUser();
 	    	String currentUserId = currentUser.getId();
 	    	String siteServiceString = SiteService.siteReference(siteId);
-	    	
-	    	User user = UserDirectoryService.getCurrentUser();
-			String emailAddress = user.getEmail();
+
+			String emailAddress = currentUser.getEmail();
 	    	
 	    	// This is a hierarchical permission structure for Google Calendar permissions
 	    	// Since these are all check boxes, this sets the permissions to the highest level
@@ -210,8 +209,17 @@ public class GCalendarAction extends PagedResourceActionII
 				permission = SakaiGCalendarServiceStaticVariables.SECURE_GCAL_VIEW;
 			}
 			
-	    	// Check to see if the user is a valid user (i.e. they have a google calendar of their own)	    	
-	    	hasGoogleAccount = SakaiGCalendarService.isValidGoogleUser(emailAddress);
+	    	// Get the access token for the calendar/user
+	    	accessToken = SakaiGCalendarService.getGCalendarAccessToken(gcalid, emailAddress );
+	    	// If we can not get the access token, that means that the user does not have access to the calendar, yet
+	    	if (accessToken == null ) {
+	    		// Check to see if the user is a valid user (i.e. they have a google calendar of their own)	    	
+		    	hasGoogleAccount = SakaiGCalendarService.isValidGoogleUser(emailAddress);
+		   	}
+	    	else {
+	    		hasGoogleAccount = true;
+	    	}
+	    	
 			
 			// If the current user is NOT the site creator AND they have a good Google Email Account AND they are not a super user
 			// 		Add or update the user's Google Calendar permissions acl (access control list).
@@ -227,14 +235,17 @@ public class GCalendarAction extends PagedResourceActionII
 				M_log.warn( "User has no google account: " + currentUser );
 			}
 			
+			// first time going into the gcalendar tool or no google account
 			// Get the access token for the user or the delegated access of the site creator (make into a method)
 			if ( accessToken == null ) {
 				// save the Google Calendar Id to the site property and return the Access Token
-				// get the Google Calendar Access Token
-				accessToken = SakaiGCalendarService.getGCalendarAccessToken(gcalid);
-				if (accessToken == null) {
+				// get the Google Calendar Access Token if we have a valid google user and they are not a super user
+				if ( hasGoogleAccount && !isSuper ) {
+					accessToken = SakaiGCalendarService.getGCalendarAccessToken(gcalid, emailAddress);
+				}
+				else { // no Google account or they are a super user
 					M_log.warn("buildDelegateAccessContext: " + "getGCalendar failed first try");
-					// If the user is not an authorized Google user (i.e. does not have a google email account in your service domain)
+					// The user is not an authorized Google user (i.e. does not have a google email account in your service domain)
 					// Use the owner's email because the site creator is the owner in Google and will always have access to the calendar.
 					String ownerEmailId = site.getCreatedBy().getEmail();
 					accessToken = SakaiGCalendarService.getGCalendarAccessToken(gcalid, ownerEmailId);
@@ -242,9 +253,14 @@ public class GCalendarAction extends PagedResourceActionII
 						M_log.error("buildDelegateAccessContext: " + "getGCalendar failed second try with owner email id " + ownerEmailId );
 						return "_noaccess";
 					}
-					hasGoogleAccount = false;
 				}
-	    	}
+	    	}	
+			
+			// Override context values for super user and not google account folks
+			if ( isSuper || !hasGoogleAccount ) {
+				viewDetailsAllowed = false;
+				createEventsAllowed = false;
+			}
 			
 			// build the menu
 			buildMenu(portlet, context, rundata, this.isOkToShowPermissionsButton(currentUserId, siteServiceString));
