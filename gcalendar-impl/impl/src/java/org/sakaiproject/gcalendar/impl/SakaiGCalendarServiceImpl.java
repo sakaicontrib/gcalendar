@@ -173,7 +173,7 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 				return false;
 			
 		} catch (IOException e) {
-			M_log.debug("getGCalendarAccessToken2 - IOException: " + e.getMessage());
+			M_log.debug("isValidGoogleUser - IOException: " + e.getMessage());
 			return false;
 		}				
 		// user is a valid Google user		
@@ -526,7 +526,7 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 		try {
 			com.google.api.services.calendar.model.Calendar calendar = client.calendars().get(gcalid).execute();
 		} catch (IOException e) {
-			M_log.error("getGCalendarAccessToken2 - IOException: " + e.getMessage());
+			M_log.error("getGCalendarAccessToken - IOException: " + e.getMessage());
 			return null;
 		}
 		return credential.getAccessToken();
@@ -588,13 +588,13 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 			rule.setScope(scope);
 			
 			// Determine Google calendar permissions based on Sakai permissions
-			if ( permission.equals(org.sakaiproject.site.api.SiteService.SECURE_UPDATE_SITE_MEMBERSHIP) || isSuper) {
+			if ( permission.equals(org.sakaiproject.site.api.SiteService.SECURE_UPDATE_SITE_MEMBERSHIP)) {
 				rule.setRole(SakaiGCalendarServiceStaticVariables.RULE_ROLE_OWNER);
 			}
 			else if ( permission.equals(SakaiGCalendarServiceStaticVariables.SECURE_GCAL_EDIT)) {
 				rule.setRole(SakaiGCalendarServiceStaticVariables.RULE_ROLE_WRITER);
 			}
-			else if ( permission.equals(SakaiGCalendarServiceStaticVariables.SECURE_GCAL_VIEW_ALL)) {
+			else if ( permission.equals(SakaiGCalendarServiceStaticVariables.SECURE_GCAL_VIEW_ALL) || isSuper) {
 				rule.setRole(SakaiGCalendarServiceStaticVariables.RULE_ROLE_READER);
 			}
 			else if ( permission.equals(SakaiGCalendarServiceStaticVariables.SECURE_GCAL_VIEW)) {
