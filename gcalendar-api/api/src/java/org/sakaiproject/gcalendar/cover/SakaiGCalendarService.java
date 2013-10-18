@@ -55,22 +55,6 @@ public class SakaiGCalendarService    {
 		
 		return service.saveGoogleCalendarInfo(site);
     }
-    
-    /**
-	 * get the Google Calendar Access Token
-	 * 
-	 * @param String Google Calendar ID
-	 * @return String
-	 *        
-	 */
-    public static String getGCalendarAccessToken(String gcalid) {
-    	org.sakaiproject.gcalendar.api.SakaiGCalendarService service = getInstance();
-		if (service == null) {
-			return null;
-		}
-		
-		return service.getGCalendarAccessToken(gcalid);
-    }
 
     /**
 	 * get the Google Calendar Access Token

@@ -39,15 +39,6 @@ public interface SakaiGCalendarService extends EntityProducer {
 	 * get the Google Calendar Access Token
 	 * 
 	 * @param String Google Calendar ID
-	 * @return String Access Token
-	 *        
-	 */
-	public String getGCalendarAccessToken(String gcalid);
-	
-	/**
-	 * get the Google Calendar Access Token
-	 * 
-	 * @param String Google Calendar ID
 	 * @param String Owner's email address
 	 * @return String Access Token
 	 *        
