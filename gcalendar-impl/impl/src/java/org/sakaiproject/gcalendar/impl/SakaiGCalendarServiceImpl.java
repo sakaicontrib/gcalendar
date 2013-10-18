@@ -488,20 +488,7 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 		}
 		return createdCalendar;
 	}
-	
-	/**
-	 * get google calendar access token for a Sakai site.
-	 * 
-	 * @param String google calendar id
-	 * @return String google calendar access token
-	 * 
-	 */
-	public String getGCalendarAccessToken(String gcalid) {
-		
-		String emailAddress = getUserEmailAddress();
 
-		return getGCalendarAccessToken(gcalid, emailAddress);
-	}
 	/**
 	 * get google calendar access token for a Sakai site.
 	 * 
