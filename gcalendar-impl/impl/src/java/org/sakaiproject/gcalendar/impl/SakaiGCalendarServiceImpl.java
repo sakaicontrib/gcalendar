@@ -23,16 +23,13 @@ package org.sakaiproject.gcalendar.impl;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
-import java.util.Vector;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.http.HttpException;
 import org.sakaiproject.authz.api.FunctionManager;
 import org.sakaiproject.authz.api.SecurityService;
 import org.sakaiproject.component.api.ServerConfigurationService;
@@ -49,20 +46,15 @@ import org.sakaiproject.exception.PermissionException;
 import org.sakaiproject.gcalendar.api.SakaiGCalendarService;
 import org.sakaiproject.google.impl.SakaiGoogleAuthServiceImpl;
 import org.sakaiproject.gcalendar.api.SakaiGCalendarServiceStaticVariables;
-
 import org.sakaiproject.site.api.Site;
 import org.sakaiproject.site.api.SiteService;
 import org.sakaiproject.user.api.Preferences;
 import org.sakaiproject.user.api.PreferencesEdit;
 import org.sakaiproject.user.api.PreferencesService;
 import org.sakaiproject.user.api.User;
-import org.sakaiproject.user.api.UserNotDefinedException;
 import org.sakaiproject.user.cover.UserDirectoryService;
 import org.sakaiproject.time.cover.TimeService;
-import org.sakaiproject.authz.api.AuthzGroup;
 import org.sakaiproject.authz.cover.AuthzGroupService;
-import org.sakaiproject.authz.api.GroupNotDefinedException;
-
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -74,7 +66,6 @@ import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.Lists;
 import com.google.api.services.calendar.Calendar;
 import com.google.api.services.calendar.CalendarScopes;
-import com.google.api.services.calendar.model.Acl;
 import com.google.api.services.calendar.model.AclRule;
 import com.google.api.services.calendar.model.AclRule.Scope;
 import com.google.api.services.calendar.model.CalendarListEntry;
@@ -194,7 +185,15 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 	
 	private void contextHelper(String context, boolean toolPlacement ) {
 		if (toolPlacement) {
-			String emailAddress = getUserEmailAddress();
+			
+			Site site = null;
+			try {
+				site = m_siteService.getSite(context);
+			} catch (IdUnusedException e) {
+				M_log.error("contextHelper" + e.getMessage());
+			}
+			String emailAddress = site.getCreatedBy().getEmail();
+//			String emailAddress = getUserEmailAddress();
 			boolean okToCreate = okToCreateGoogleCalendar(context, emailAddress);
 			if (okToCreate) {
 				enableGCalendar(context, emailAddress);
@@ -284,20 +283,8 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 		gcalid = getGoogleCalendarID(siteTitle, credential);
 
 		if ( null != gcalid ) {
-			// add gcalid as the Sakai site property
-			site.getPropertiesEdit().addProperty(SakaiGCalendarServiceStaticVariables.GCALID, gcalid);
-
-			try {
-				// save the site
-				m_siteService.save(site);
-			} catch (IdUnusedException e) {
-				M_log.error("saveGoogleCalendarInfo: " + e.getMessage());
-				return null;
-			} catch (Exception e) {
-				M_log.error("saveGoogleCalendarInfo: " + e.getMessage());
-				return null;
-			}
-			return credential.getAccessToken();
+			// add gcalid to the Sakai site property
+			this.addGcalendarIdToSite(site, gcalid);
 		}
 		return null; // Google calendar does not exist
 	}
@@ -409,6 +396,9 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 		// Insert a new one if it exists (updating did not work well)
 		gcalID = createdCalendar.getId();
 		
+		// Now that we have a Google Calendar Id, add it to the site properties.
+		this.addGcalendarIdToSite(site, gcalID);   
+		
 		try {
 			AclRule ruleDefault = client.acl().get(gcalID, ACL_DEFAULT).execute();
 			M_log.debug(" ruleDefault : " + ruleDefault.toPrettyString());
@@ -446,7 +436,8 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 		
 		// and for the domain
 		try {
-			String emailAddress = getUserEmailAddress();
+//			String emailAddress = getUserEmailAddress();
+			String emailAddress = site.getCreatedBy().getEmail();
 			if ( null != emailAddress) {
 				String emailDomain = emailAddress.substring(emailAddress.indexOf('@') + 1 );
 				String aclDomainString = DOMAIN + COLON + emailDomain; // domain:emaildomain
@@ -855,4 +846,25 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 		M_log.warn("destroy...");
 	}	
 		
+	/**
+	 * Persist the Google Calendar id to the site properties.
+	 * @param Sakai site
+	 * @param Google Calendar Id
+	 */
+	private void addGcalendarIdToSite(Site site, String calendarId){
+		if ( calendarId != null) {
+			// add gcalid to the Sakai site property
+			site.getPropertiesEdit().addProperty(SakaiGCalendarServiceStaticVariables.GCALID, calendarId);
+
+			try {
+				// save the site
+				m_siteService.save(site);
+			} catch (IdUnusedException e) {
+				M_log.error("addGcalendarIdToSite: " + e.getMessage());
+			} catch (Exception e) {
+				M_log.error("addGcalendarIdToSite: " + e.getMessage());
+			}
+		}
+	}
+	
 }
