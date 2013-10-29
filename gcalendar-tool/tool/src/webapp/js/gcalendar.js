@@ -5,6 +5,10 @@
  but, it did not in some of my earlier testing so I left it in.
  */
 
+//The default colors are set in library/src/webapp/fullcalendar/fullcalendar.css
+var WHITE = '#FFFFFF';
+var EVENT_BACKGROUND_COLOR = '#3366CC'; // a light-ish blue to be compatible with the previous version
+
 var eventArray = []; // move globally
 
 var editable;
@@ -13,7 +17,7 @@ var createEvents;
 var busy = "busy";
 
 var host = "../../"; // relative path to proxy
-//var proxyName = "proxy-gcalendar";
+
 var proxyName = "crossdomain/gcalendar";
 
 var eventTimeValueArray = ["00:00", "00:30", "01:00", "01:30", "02:00", "02:30", "03:00", "03:30", "04:00", "04:30", "05:00", "05:30", 
@@ -32,7 +36,7 @@ getGoogleCalendar = function(accesstoken, gcalid) {
 	if ( viewDetailsAllowed == "false")
 		editable = false;
 	
-	// viewDetailsAllowed is a String
+	// createEventsAllowed is a String
 	createEvents = true;
 	if ( createEventsAllowed == "false")
 		createEvents = false;
@@ -53,9 +57,13 @@ getGoogleCalendar = function(accesstoken, gcalid) {
         },
 
         // get all the events in the given time range from google calendar
-        events : function(start, end, callback) {       	
+        events : function(start, end, callback) { 
         	refreshCalendarItems( start, end, callback );
         },
+        
+        eventBackgroundColor : EVENT_BACKGROUND_COLOR,
+        
+        eventTextColor : WHITE,
         
         // drop an existing event in full calendar (NOTE: does not work in IE9)
         eventDrop: function(event,dayDelta,minuteDelta,allDay,revertFunc) {
