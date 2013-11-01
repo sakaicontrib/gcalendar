@@ -193,7 +193,6 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 				M_log.error("contextHelper" + e.getMessage());
 			}
 			String emailAddress = site.getCreatedBy().getEmail();
-//			String emailAddress = getUserEmailAddress();
 			boolean okToCreate = okToCreateGoogleCalendar(context, emailAddress);
 			if (okToCreate) {
 				enableGCalendar(context, emailAddress);
@@ -436,7 +435,6 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 		
 		// and for the domain
 		try {
-//			String emailAddress = getUserEmailAddress();
 			String emailAddress = site.getCreatedBy().getEmail();
 			if ( null != emailAddress) {
 				String emailDomain = emailAddress.substring(emailAddress.indexOf('@') + 1 );
