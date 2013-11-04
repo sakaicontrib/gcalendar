@@ -44,6 +44,9 @@
 	var createEventsAllowed = '${createEventsAllowed}';
 	var gcalview = '${gcalview}';
 	var menu = '${menu}';
+	var baseUrl = '${baseUrl}';
+	var proxyName = '${proxyName}';
+	
 	
 	$(document).ready(function() {
 	
