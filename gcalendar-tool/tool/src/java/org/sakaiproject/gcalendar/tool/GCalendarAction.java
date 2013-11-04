@@ -131,6 +131,17 @@ public class GCalendarAction extends PagedResourceActionII
 		}
 		context.put("googlelink",buffer );
 		
+		// Get proxy base url from sakai.property file.
+		String baseUrl = org.sakaiproject.component.cover.ServerConfigurationService.getString("proxy.base.url");
+		if (baseUrl != null){
+			context.put("baseUrl", baseUrl);
+		}
+		// Get proxy name from sakai.property file.
+		String proxyName = org.sakaiproject.component.cover.ServerConfigurationService.getString("proxy.name");
+		if (proxyName != null){
+			context.put("proxyName", proxyName);
+		}
+		
 		String prefix = (String) getContext(rundata).get("template");
 		return prefix + template;
 	}
