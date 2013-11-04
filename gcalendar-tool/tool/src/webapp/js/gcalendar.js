@@ -16,10 +16,6 @@ var createEvents;
 
 var busy = "busy";
 
-var host = "../../"; // relative path to proxy
-
-var proxyName = "crossdomain/gcalendar";
-
 var eventTimeValueArray = ["00:00", "00:30", "01:00", "01:30", "02:00", "02:30", "03:00", "03:30", "04:00", "04:30", "05:00", "05:30", 
                            "06:00", "06:30", "07:00", "07:30", "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30", 
                            "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", "15:00", "15:30", "16:00", "16:30", "17:00", "17:30", 
@@ -102,7 +98,7 @@ getGoogleCalendar = function(accesstoken, gcalid) {
                     type : "PUT",
                     contentType : "application/json",
                     data : data2,
-                    url : host + '/' + proxyName + '/calendar/v3/calendars/' + gcalid + '/events/' + eventID + '/?access_token=' + accesstoken + '&amp;' + Math.floor((Math.random()*100)+1),
+                    url : baseUrl + '/' + proxyName + '/calendar/v3/calendars/' + gcalid + '/events/' + eventID + '/?access_token=' + accesstoken + '&amp;' + Math.floor((Math.random()*100)+1),
                     dataType : "json",
                     async: true,
                     cache: false,
@@ -169,7 +165,7 @@ getGoogleCalendar = function(accesstoken, gcalid) {
                     type : "PUT",
                     contentType : "application/json",
                     data : data2,
-                    url : host + '/' + proxyName + '/calendar/v3/calendars/' + gcalid + '/events/' + eventID + '/?access_token=' + accesstoken + '&amp;' + Math.floor((Math.random()*100)+1),
+                    url : baseUrl + '/' + proxyName + '/calendar/v3/calendars/' + gcalid + '/events/' + eventID + '/?access_token=' + accesstoken + '&amp;' + Math.floor((Math.random()*100)+1),
                     dataType : "json",
                     async: false,
                     cache: false,
@@ -368,7 +364,7 @@ getGoogleCalendar = function(accesstoken, gcalid) {
                     type : "POST",
                     contentType : jsonContext,
                     data : data2,
-                    url : host + '/' + proxyName + '/calendar/v3/calendars/' + gcalid + '/events?access_token=' + accesstoken +'&amp;' + Math.floor((Math.random()*100)+1),
+                    url : baseUrl + '/' + proxyName + '/calendar/v3/calendars/' + gcalid + '/events?access_token=' + accesstoken +'&amp;' + Math.floor((Math.random()*100)+1),
                     dataType : json,
                     async: false, // when true, you can get multiple events created
                     cache: false,
@@ -540,7 +536,7 @@ refreshCalendarItems = function( start, end, callback ) {
 	// use Math function to make sure this request is unique (caching issues can happen in ie - may be refactored out later)
 	jQuery.ajax({
     	type : "GET",
-    	url : host + '/' + proxyName + '/calendar/v3/calendars/' + gcalid + '/events?access_token=' + accesstoken +'&amp;' + Math.floor((Math.random()*100)+1),
+    	url : baseUrl + '/' + proxyName + '/calendar/v3/calendars/' + gcalid + '/events?access_token=' + accesstoken +'&amp;' + Math.floor((Math.random()*100)+1),
         dataType : 'json',
         
         data : {
