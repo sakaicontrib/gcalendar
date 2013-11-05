@@ -175,12 +175,7 @@ public class GCalendarAction extends PagedResourceActionII
 			String gcalid = site.getProperties().getProperty(SakaiGCalendarServiceStaticVariables.GCALID);
 			// we need the gcalid to continue
 			if (gcalid == null) {
-				// save the Google Calendar Id to the site property and return the Access Token
-				accessToken = SakaiGCalendarService.saveGoogleCalendarInfo(site);
-				if (accessToken == null) {
-					M_log.warn("buildDelegateAccessContext: " + "saveGoogleCalendarInfo failed");
-					return "_noaccess";
-				}
+				return "_nocalendar";
 			}
 			
 			User currentUser = UserDirectoryService.getCurrentUser();
