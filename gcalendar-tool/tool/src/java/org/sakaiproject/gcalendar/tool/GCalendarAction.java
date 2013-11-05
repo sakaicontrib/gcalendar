@@ -28,6 +28,7 @@ import java.util.Map;
 
 import lombok.Setter;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.sakaiproject.cheftool.Context;
@@ -131,15 +132,21 @@ public class GCalendarAction extends PagedResourceActionII
 		}
 		context.put("googlelink",buffer );
 		
-		// Get proxy base url from sakai.property file.
+		// Get proxy base url from sakai.property file otherwise go directly to the google api's.
 		String baseUrl = org.sakaiproject.component.cover.ServerConfigurationService.getString("proxy.base.url");
-		if (baseUrl != null){
+		if (!StringUtils.isEmpty(baseUrl)){
 			context.put("baseUrl", baseUrl);
+		}
+		else{
+			context.put("baseUrl", "https://www.googleapis.com");
 		}
 		// Get proxy name from sakai.property file.
 		String proxyName = org.sakaiproject.component.cover.ServerConfigurationService.getString("proxy.name");
-		if (proxyName != null){
+		if (!StringUtils.isEmpty(proxyName)){
 			context.put("proxyName", proxyName);
+		}
+		else{
+			context.put("proxyName", ""); // Set this to an empty string so the url will be formatted correctly.
 		}
 		
 		String prefix = (String) getContext(rundata).get("template");
