@@ -18,7 +18,7 @@ Sakai configuration:
    google.service.account.email=
    google.private.key=
 
-   if using a proxy server to access the google api's add the following two properties:
+   if using a proxy server to access the google api's, add the following two properties to sakai.properties:
    proxy.base.url=../../   
    proxy.name=crossdomain/gcalendar 
 
