@@ -243,7 +243,8 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 
 		// if the Google Calendar has already been created and the Google Calendar Id has already been saved in the site property
 		// return true
-		// else, create the calendar in google.
+		// else
+		// return false so we create the calendar in google.
 		if (site.getProperties().getProperty(SakaiGCalendarServiceStaticVariables.GCALID) != null) { 
 			return false;
 		} else {		
@@ -252,7 +253,6 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 				M_log.warn(this + " okToCreateGoogleCalendar - Not Authorized");
 				return false; // user not authorized - do not create calendar
 			}
-			gcalid = getGoogleCalendarID(siteTitle, credential);
 			
 			if (null != gcalid)
 				return false;
@@ -262,75 +262,21 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 	}
 
 	/**
-	 * Save the Google Calendar Id as a site Property ("gcalid")
-	 * 
-	 * @param Site current site
-	 * @return String Google calendar access token
-	 * 
-	 */
-	public String saveGoogleCalendarInfo(Site site) {
-
-		String siteTitle = site.getTitle();
-		String gcalid = null;
-		String emailAddress = getUserEmailAddress();
-
-		GoogleCredential credential = getGoogleCredential(emailAddress);
-		if (credential == null) {
-			return null; // user not authorized - do not return access token
-		}
-		
-		gcalid = getGoogleCalendarID(siteTitle, credential);
-
-		if ( null != gcalid ) {
-			// add gcalid to the Sakai site property
-			this.addGcalendarIdToSite(site, gcalid);
-		}
-		return null; // Google calendar does not exist
-	}
-
-	/**
 	 * Get the Google Calendar ID from Google
 	 * 
-	 * @param String Site Title
-	 * @param String Email ID
-	 * @param String Google Credentials
+	 * @param Site site
 	 * @return String Google Calendar ID or null, if not found
 	 * 
 	 */
-	private String getGoogleCalendarID(String siteTitle, GoogleCredential credential) {
+	private String getGoogleCalendarID(Site site) {
 
 		String gcalid = null;
-		Calendar client;
 		
-		try {
-			
-			client = getGoogleClient( credential );
-
-			com.google.api.services.calendar.model.CalendarList feed = client.calendarList().list().execute();
-			String summary = null;
-
-			if (feed.getItems() != null) {
-				List<CalendarListEntry> calendarList = feed.getItems();
-				for (CalendarListEntry calendarEntry : calendarList) {
-					// Note: this is an issue if there is more than one Google Calendar with the same name
-					// created by the same user. This will find the first one returned.
-					summary = (String) calendarEntry.get("summary");
-					if (siteTitle.equals(summary)) {
-						gcalid = calendarEntry.getId();
-						return gcalid;
-					}
-				}
-			} else {
-				return null;
-			}
-
-		} catch (IOException e) {
-			M_log.error("getGoogleCalendarInfo: " + e.getMessage());
-			return null;
-		} catch (Exception e) {
-			M_log.error("getGoogleCalendarInfo: " + e.getMessage());
-			return null;
-		}
+		// get the Google Calendar ID and use it if found
+		gcalid = site.getProperties().getProperty(SakaiGCalendarServiceStaticVariables.GCALID);
+		
+		if ( gcalid != null && !gcalid.isEmpty() )
+			return gcalid;
 		
 		return null;
 	}
@@ -516,7 +462,7 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 	 */
     public void addUserToAccessControlList(Site site, String permission) {
     	
-    	String gcalid = site.getProperties().getProperty(SakaiGCalendarServiceStaticVariables.GCALID);
+    	String gcalid = getGoogleCalendarID( site);
     	User currentUser = UserDirectoryService.getCurrentUser();
     	String currentUserId = currentUser.getId();
     	
