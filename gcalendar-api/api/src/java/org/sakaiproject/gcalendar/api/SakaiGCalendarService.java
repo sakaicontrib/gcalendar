@@ -27,15 +27,6 @@ import org.sakaiproject.site.api.Site;
 public interface SakaiGCalendarService extends EntityProducer {
 	
 	/**
-	 * save the Google Calendar Id to the site property and return the Access Token
-	 * 
-	 * @param Site
-	 * @return String Access Token
-	 *        
-	 */
-	public String saveGoogleCalendarInfo(Site site);
-	
-	/**
 	 * get the Google Calendar Access Token
 	 * 
 	 * @param String Google Calendar ID

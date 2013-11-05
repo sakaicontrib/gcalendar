@@ -39,22 +39,6 @@ public class SakaiGCalendarService    {
 			return (org.sakaiproject.gcalendar.api.SakaiGCalendarService) ComponentManager.get(org.sakaiproject.gcalendar.api.SakaiGCalendarService.class);
 		}
 	}
-    
-	/**
-	 * save the Google Calendar Id to the site property and return the Access Token
-	 * 
-	 * @param Site
-	 * @return String
-	 *        
-	 */
-    public static String saveGoogleCalendarInfo(Site site) {
-    	org.sakaiproject.gcalendar.api.SakaiGCalendarService service = getInstance();
-		if (service == null) {
-			return null;
-		}
-		
-		return service.saveGoogleCalendarInfo(site);
-    }
 
     /**
 	 * get the Google Calendar Access Token
