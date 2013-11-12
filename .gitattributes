@@ -6,6 +6,10 @@ gcalendar-impl/impl/src/java/org/sakaiproject/gcalendar/impl/SakaiGCalendarServi
 gcalendar-tool/tool/src/bundle/permissions.properties -text svneol=unset#text/plain
 gcalendar-tool/tool/src/java/org/sakaiproject/gcalendar/tool/GCalendarAction.java -text svn_keywords=Date+Revision+Author+HeadURL+Id
 gcalendar-tool/tool/src/webapp/js/gcalendar.js -text
+gcalendar-tool/tool/src/webapp/js/timepicker/jquery.timepicker.css -text
+gcalendar-tool/tool/src/webapp/js/timepicker/jquery.timepicker.min.js -text
+gcalendar-tool/tool/src/webapp/js/timepicker/lib/base.css -text
+gcalendar-tool/tool/src/webapp/js/timepicker/lib/base.js -text
 gcalendar-tool/tool/src/webapp/vm/chef_gcalendar_delegateaccess.vm svn_keywords=Date+Revision+Author+HeadURL+Id
 gcalendar-tool/tool/src/webapp/vm/chef_gcalendar_noaccess.vm -text
 gcalendar-tool/tool/src/webapp/vm/chef_gcalendar_nocalendar.vm -text
