@@ -4,6 +4,9 @@
 <link rel='stylesheet' type='text/css' href='/library/fullcalendar/fullcalendar.print.css' media='print' />
 <link rel='stylesheet' type='text/css' href='/library/js/jquery/ui/1.8.4/css/ui-lightness/jquery-ui-1.8.4.full.css'/> ## Grid lines, buttons, today highlight
 
+<link rel='stylesheet' type='text/css' href='/sakai-gcalendar-tool/js/timepicker/jquery.timepicker.css'/> ## Timepicker style
+<link rel='stylesheet' type='text/css' href='/sakai-gcalendar-tool/js/timepicker/lib/base.css'/> ## Used in Timepicker style
+
 <script type='text/javascript' src='/library/fullcalendar/lib/jquery.min.js'></script> ## new js library
 <script type='text/javascript' src='/library/fullcalendar/js/jquery/1.7.1/jquery-1.7.1.min.js'></script> ## handles eventclick
 
@@ -11,6 +14,9 @@
 
 <script type='text/javascript' src='/library/fullcalendar/fullcalendar.min.js'></script>
 <script type='text/javascript' src='/library/js/jquery/ui/1.8.4/jquery-ui-1.8.4.full.min.js'></script> ## for dayClick
+
+<script type='text/javascript' src='/sakai-gcalendar-tool/js/timepicker/jquery.timepicker.min.js'></script> ## Plugin for timepicker
+<script type='text/javascript' src='/sakai-gcalendar-tool/js/timepicker/lib/base.js'></script> ## Used in timepicker plugin
 
 <script type='text/javascript' src='/sakai-gcalendar-tool/js/gcalendar.js'></script>
 
@@ -90,125 +96,15 @@
 					<label for="newEventStartTime" style="vertical-align:top">$tlang.getString("gcal.event.start") </label>
 				</td>
 				<td style="width: 90px">
-					<input type="text" id = "newEventStartTime" class="newEventStartTimeText" size="7"/>
-					<input type="hidden" class="newEventStartTimeValue" size="7"/>				
+					<input type="text" id="newEventStartTime" class="time">
 				</td>
 				<td>
 					<label for="newEventEndTime" style="vertical-align:top">$tlang.getString("gcal.event.end") </label>
 				</td>
 				<td style="width: 90px">
-					<input type="text" id="newEventEndTime" class="newEventEndTimeText" size="7"/>
-					<input type="hidden" class="newEventEndTimeValue" size="7"/>
+					<input type="text" id="newEventEndTime" class="time">
 				</td>
 			</tr>	
-			<tr>		
-				<td></td>
-				<td>	
-					<select size="7" class="newEventStartTimeSelect" style="display:none"/>
-						<option value="00:00">12:00am</option>
-				  		<option value="00:30">12:30am</option>
-						<option value="01:00">1:00am</option>
-						<option value="01:30">1:30am</option>
-						<option value="02:00">2:00am</option>
-						<option value="02:30">2:30am</option>
-						<option value="03:00">3:00am</option>
-						<option value="03:30">3:30am</option>
-						<option value="04:00">4:00am</option>
-				    	<option value="04:30">4:30am</option>
-				    	<option value="05:00">5:00am</option>
-				    	<option value="05:30">5:30am</option>
-				    	<option value="06:00">6:00am</option>
-				    	<option value="06:30">6:30am</option>
-				    	<option value="07:00">7:00am</option>
-				    	<option value="07:30">7:30am</option>
-				    	<option value="08:00">8:00am</option>
-				    	<option value="08:30">8:30am</option>
-				    	<option value="09:00">9:00am</option>
-				    	<option value="09:30">9:30am</option>
-				    	<option value="10:00">10:00am</option>
-				    	<option value="10:30">10:30am</option>
-				    	<option value="11:00">11:00am</option>
-				    	<option value="11:30">11:30am</option>
-				    	<option value="12:00">12:00pm</option>
-				    	<option value="12:30">12:30pm</option>
-				    	<option value="13:00">1:00pm</option>
-				    	<option value="13:30">1:30pm</option>
-				    	<option value="14:00">2:00pm</option>
-				    	<option value="14:30">2:30pm</option>
-				    	<option value="15:00">3:00pm</option>
-				    	<option value="15:30">3:30pm</option>
-				    	<option value="16:00">4:00pm</option>
-				    	<option value="16:30">4:30pm</option>
-				    	<option value="17:00">5:00pm</option>
-				    	<option value="17:30">5:30pm</option>
-				    	<option value="18:00">6:00pm</option>
-				    	<option value="18:30">6:30pm</option>
-				    	<option value="19:00">7:00pm</option>
-				    	<option value="19:30">7:30pm</option>
-				    	<option value="20:00">8:00pm</option>
-				    	<option value="20:30">8:30pm</option>
-				    	<option value="21:00">9:00pm</option>
-				    	<option value="21:30">9:30pm</option>
-				    	<option value="22:00">10:00pm</option>
-				    	<option value="22:30">10:30pm</option>
-				    	<option value="23:00">11:00pm</option>
-				    	<option value="23:30">11:30pm</option>
-					</select>
-				</td>
-				<td></td>
-				<td>
-					<select size="7" class="newEventEndTimeSelect" style="display:none"/>
-						<option value="00:00">12:00am</option>
-			  			<option value="00:30">12:30am</option>
-			  			<option value="01:00">1:00am</option>
-			  			<option value="01:30">1:30am</option>
-			  			<option value="02:00">2:00am</option>
-			  			<option value="02:30">2:30am</option>
-			  			<option value="03:00">3:00am</option>
-			  			<option value="03:30">3:30am</option>
-			  			<option value="04:00">4:00am</option>
-			  			<option value="04:30">4:30am</option>
-			  			<option value="05:00">5:00am</option>
-			  			<option value="05:30">5:30am</option>
-			  			<option value="06:00">6:00am</option>
-			  			<option value="06:30">6:30am</option>
-			  			<option value="07:00">7:00am</option>
-			  			<option value="07:30">7:30am</option>
-			  			<option value="08:00">8:00am</option>
-			  			<option value="08:30">8:30am</option>
-			  			<option value="09:00">9:00am</option>
-			  			<option value="09:30">9:30am</option>
-			  			<option value="10:00">10:00am</option>
-			  			<option value="10:30">10:30am</option>
-			  			<option value="11:00">11:00am</option>
-			  			<option value="11:30">11:30am</option>
-			  			<option value="12:00">12:00pm</option>
-			  			<option value="12:30">12:30pm</option>
-			  			<option value="13:00">1:00pm</option>
-			  			<option value="13:30">1:30pm</option>
-			  			<option value="14:00">2:00pm</option>
-			  			<option value="14:30">2:30pm</option>
-			  			<option value="15:00">3:00pm</option>
-			  			<option value="15:30">3:30pm</option>
-			  			<option value="16:00">4:00pm</option>
-			  			<option value="16:30">4:30pm</option>
-			  			<option value="17:00">5:00pm</option>
-			  			<option value="17:30">5:30pm</option>
-			  			<option value="18:00">6:00pm</option>
-			  			<option value="18:30">6:30pm</option>
-			  			<option value="19:00">7:00pm</option>
-			  			<option value="19:30">7:30pm</option>
-			  			<option value="20:00">8:00pm</option>
-			  			<option value="20:30">8:30pm</option>
-			  			<option value="21:00">9:00pm</option>
-			  			<option value="21:30">9:30pm</option>
-			  			<option value="22:00">10:00pm</option>
-			  			<option value="22:30">10:30pm</option>
-			  			<option value="23:00">11:00pm</option>
-			  			<option value="23:30">11:30pm</option>
-					</select>
-				</td>
-			</tr>
 		</table>	
 	</div>
 	<p><input type="button" class="newEventSave" value='$tlang.getString("gcal.event.create")'></p>
