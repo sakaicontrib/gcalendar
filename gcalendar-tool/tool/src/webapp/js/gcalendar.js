@@ -239,12 +239,20 @@ getGoogleCalendar = function(accesstoken, gcalid) {
                     var eventStartTimeText = getEventTimeText(eventStartTimeValue);
                     var eventEndTimeText = getEventTimeText(eventEndTimeValue);
                     
-                    $("#newEvent .newEventStartTimeText").val(eventStartTimeText);
-                    $("#newEvent .newEventEndTimeText").val(eventEndTimeText);
+                    // Initialize the timepickers.
+                    $('#newEventStartTime').timepicker({'minTime': eventStartTimeText});
+                    $('#newEventEndTime').timepicker({'minTime': eventStartTimeText, 'showDuration': true});
                     
-                    $("#newEvent .newEventStartTimeValue").val(eventStartTimeValue);
-                    $("#newEvent .newEventEndTimeValue").val(eventEndTimeValue);                  
+                    // Update the entry fields on the page with the time values.
+                    $('#newEventStartTime').val(eventStartTimeText);
+                    $('#newEventEndTime').val(eventEndTimeText);
                 }
+                
+                // Event handler for changes in start time; need to update the end time picker
+                $("#newEventStartTime").on("change", function(){
+                	var startTimeValue = $(this).val(); 
+                	$('#newEventEndTime').timepicker('option', {'minTime' : startTimeValue, 'showDuration': true}); 
+                });
                 
                 // event handler for checkbox
                 $("#newEvent .newEventAllDay").live("click", function(e) {                                                       
@@ -252,45 +260,17 @@ getGoogleCalendar = function(accesstoken, gcalid) {
                         $("#newEvent .newEventTimeClass").hide();
                     } else {
                         $("#newEvent .newEventTimeClass").show();
+                        // Initialize the time pickers.
+                        $('#newEventStartTime').timepicker({'scrollDefaultNow':true}); 
+                        $('#newEventEndTime').timepicker({'scrollDefaultNow':true}); 
                     }                    
                 });
                 
-                // event handler for dropdown list
-                $("#newEvent .newEventStartTimeText").live("focus", function(e) {                                                       
-                    $("#newEvent .newEventStartTimeSelect").show();
-                    $("#newEvent .newEventEndTimeSelect").hide();                        
-                });
-                
-                $("#newEvent .newEventEndTimeText").live("focus", function(e) {                                                       
-                    $("#newEvent .newEventEndTimeSelect").show();
-                    $("#newEvent .newEventStartTimeSelect").hide();                       
-                });
-                
-                $("#newEvent .newEventStartTimeSelect").live("click", function(e) {                                                       
-                    var startTimeValue = $("#newEvent .newEventStartTimeSelect :selected").val();
-                    var startTimeText = $("#newEvent .newEventStartTimeSelect :selected").text(); 
-                    
-                    $("#newEvent .newEventStartTimeValue").val(startTimeValue);
-                    $("#newEvent .newEventStartTimeText").val(startTimeText);
-                    
-                    $("#newEvent .newEventStartTimeSelect").hide();                
-                });
-                
-                $("#newEvent .newEventEndTimeSelect").live("click", function(e) {                                                       
-                    var endTimeValue = $("#newEvent .newEventEndTimeSelect :selected").val();
-                    var endTimeText = $("#newEvent .newEventEndTimeSelect :selected").text(); 
-
-                    $("#newEvent .newEventEndTimeValue").val(endTimeValue); 
-                    $("#newEvent .newEventEndTimeText").val(endTimeText);
-                    
-                    $("#newEvent .newEventEndTimeSelect").hide();                 
-                });
-
                 // event handler for create event button
                 $("#newEvent .newEventSave").live("click", function(e) {
                     var eventSummary = $("#newEvent .newEventTitle").val();
-                    var eventStartTimeValue = $("#newEvent .newEventStartTimeValue").val();
-                    var eventEndTimeValue = $("#newEvent .newEventEndTimeValue").val(); 
+                    var tmpEventStartTimeValue = $("#newEventStartTime").val();
+                    var tmpEventEndTimeValue = $("#newEventEndTime").val(); 
                     
                     allDay = false;
                     if ($("#newEvent .newEventAllDay:checked").length) {
@@ -298,26 +278,17 @@ getGoogleCalendar = function(accesstoken, gcalid) {
                     }
                     
                     if ( !allDay ) {
-	                    if ( eventEndTimeValue == null || eventEndTimeValue == "" ) {
-	                    	var tmpEventEndTimeValue = $("#newEvent .newEventEndTimeText").val();
-	                    	eventEndTimeValue = getEventTimeValue(tmpEventEndTimeValue );
-	                    	
-	                    	if ( eventEndTimeValue < 0 ) {
-	                    		$("#newEvent .messageValidation").remove();
-	                            $("#newEvent").prepend("<p class=\"messageValidation\" style=\"height:20px\" >Sorry, unable to create the event. Invalid End Time format.</p>");
-	                            return;
-	                    	}
+                    	var eventEndTimeValue = getEventTimeValue(tmpEventEndTimeValue );    
+	                    if ( eventEndTimeValue < 0 ) {
+	                    	$("#newEvent .messageValidation").remove();
+	                        $("#newEvent").prepend("<p class=\"messageValidation\" style=\"height:20px\" >Sorry, unable to create the event. Invalid End Time format.</p>");
+	                        return;
 	                    }
-	                    
-	                    if ( eventStartTimeValue == null || eventStartTimeValue == "" ) {
-	                    	var tmpEventStartTimeValue = $("#newEvent .newEventStartTimeText").val();
-	                    	eventStartTimeValue = getEventTimeValue(tmpEventStartTimeValue );
-	                    	
-	                    	if ( eventStartTimeValue < 0 ) {
-	                    		$("#newEvent .messageValidation").remove();
-	                            $("#newEvent").prepend("<p class=\"messageValidation\" style=\"height:20px\" >Sorry, unable to create the event. Invalid Start Time format.</p>");
-	                            return;
-	                    	}
+	                    var eventStartTimeValue = getEventTimeValue(tmpEventStartTimeValue );
+	                    if ( eventStartTimeValue < 0 ) {
+	                    	$("#newEvent .messageValidation").remove();
+	                        $("#newEvent").prepend("<p class=\"messageValidation\" style=\"height:20px\" >Sorry, unable to create the event. Invalid Start Time format.</p>");
+	                        return;
 	                    }
                     }
                     // make sure end is after start
