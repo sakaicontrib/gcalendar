@@ -148,7 +148,9 @@ public class GCalendarAction extends PagedResourceActionII
 		else{
 			context.put("proxyName", ""); // Set this to an empty string so the url will be formatted correctly.
 		}
-		
+		// Set user's Sakai timezone so it can be used in the Google calendar API calls
+		context.put("userTimeZone", TimeService.getLocalTimeZone().getID());
+
 		String prefix = (String) getContext(rundata).get("template");
 		return prefix + template;
 	}

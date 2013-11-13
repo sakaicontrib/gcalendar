@@ -302,13 +302,13 @@ getGoogleCalendar = function(accesstoken, gcalid) {
 	                    if (eventSummary1 == null || eventSummary1 === "") {
 	                        eventSummary1 = "No title";
 	                    }
-	                    processSave(eventSummary1, eventStartTimeValue, eventEndTimeValue);
+	                    processSave(eventSummary1, eventStartTimeValue, eventEndTimeValue, userTimeZone);
                     }
                 });
             });
 
             // function to save the created event
-            processSave = function(eventSummaryValue, eventStartTimeValue, eventEndTimeValue) {	   
+            processSave = function(eventSummaryValue, eventStartTimeValue, eventEndTimeValue, userTimeZone) {	   
                 var data2;
                 var starttime;
                 var endtime;
@@ -323,9 +323,9 @@ getGoogleCalendar = function(accesstoken, gcalid) {
             	} else {
             		starttime = date.yyyymmdd();
             		endtime = date.yyyymmdd();
-            		starttime = starttime + "T" + eventStartTimeValue + ":00-04:00";
-                    endtime = endtime + "T" + eventEndTimeValue + ":00-04:00";
-            		data2 = "{'end': {'dateTime': '" + endtime + "'},'start': {'dateTime': '" + starttime + "'},'summary': '" + eventSummaryValue + "'}";
+            		starttime = starttime + "T" + eventStartTimeValue + ":00";
+                    endtime = endtime + "T" + eventEndTimeValue + ":00";
+            		data2 = "{'end': {'dateTime': '" + endtime + "', 'timeZone':'"+ userTimeZone + "'},'start': {'dateTime': '" + starttime + "', 'timeZone':'"+ userTimeZone + "'},'summary': '" + eventSummaryValue + "'}";
             	}               	
 
             	json = "json";

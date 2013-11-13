@@ -52,7 +52,7 @@
 	var menu = '${menu}';
 	var baseUrl = '${baseUrl}';
 	var proxyName = '${proxyName}';
-	
+	var userTimeZone = '${userTimeZone}';
 	
 	$(document).ready(function() {
 	
