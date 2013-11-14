@@ -87,9 +87,9 @@ getGoogleCalendar = function(accesstoken, gcalid) {
             		var eventStartTimeValue = event.start.toRFC3339().substring(11, 16);
                     var eventEndTimeValue = event.end.toRFC3339().substring(11, 16);
                     
-            		starttime = starttime + "T" + eventStartTimeValue + ":00-04:00";
-                    endtime = endtime + "T" + eventEndTimeValue + ":00-04:00";
-            		data2 = "{'end': {'dateTime': '" + endtime + "'},'start': {'dateTime': '" + starttime + "'},'sequence':'" + sequence +"','summary': '" + event.title  + "'}";
+            		starttime = starttime + "T" + eventStartTimeValue + ":00";
+                    endtime = endtime + "T" + eventEndTimeValue + ":00";
+            		data2 = "{'end': {'dateTime': '" + endtime + "', 'timeZone':'"+ userTimeZone +"'},'start': {'dateTime': '" + starttime + "', 'timeZone':'"+ userTimeZone +"'},'sequence':'" + sequence +"','summary': '" + event.title  + "'}";
             	}
             	var eventID = event.id;
 
@@ -154,9 +154,9 @@ getGoogleCalendar = function(accesstoken, gcalid) {
             		var eventStartTimeValue = event.start.toRFC3339().substring(11, 16);
                     var eventEndTimeValue = event.end.toRFC3339().substring(11, 16);
                     
-            		starttime = starttime + "T" + eventStartTimeValue + ":00-04:00";
-                    endtime = endtime + "T" + eventEndTimeValue + ":00-04:00";
-            		data2 = "{'end': {'dateTime': '" + endtime + "'},'start': {'dateTime': '" + starttime + "'},'sequence':'" + sequence +"','summary': '" + event.title  + "'}";
+            		starttime = starttime + "T" + eventStartTimeValue + ":00";
+                    endtime = endtime + "T" + eventEndTimeValue + ":00";
+            		data2 = "{'end': {'dateTime': '" + endtime + "', 'timeZone':'"+ userTimeZone +"'},'start': {'dateTime': '" + starttime + "', 'timeZone':'"+ userTimeZone +"'},'sequence':'" + sequence +"','summary': '" + event.title  + "'}";
             	}
             	var eventID = event.id;
 
