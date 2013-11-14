@@ -307,7 +307,7 @@ getGoogleCalendar = function(accesstoken, gcalid) {
                 });
             });
 
-            // function to save the created event
+            // function to save the created event making use of the timezone
             processSave = function(eventSummaryValue, eventStartTimeValue, eventEndTimeValue, userTimeZone) {	   
                 var data2;
                 var starttime;
