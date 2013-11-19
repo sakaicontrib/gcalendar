@@ -84,8 +84,6 @@ public class GCalendarAction extends PagedResourceActionII
 	private static final String EMBEDED_GOOGLE_CALENDAR_URL = "http://www.google.com/calendar/embed?src=";
 	private static final String TIMEZONE_TAG = "&ctz=";
 	
-	private String saved_gcalid = null;
-	
 	/** Our logger. */
 	private static Log M_log = LogFactory.getLog(GCalendarAction.class);
 	
@@ -118,20 +116,6 @@ public class GCalendarAction extends PagedResourceActionII
 		String template = null;
 		template = buildDelegateAccessContext(context, portlet, rundata, state);
 
-		StringBuilder buffer = null;
-		
-		if ( null != saved_gcalid && !saved_gcalid.isEmpty() ) {
-			// example of a link: 
-			//http://www.google.com/calendar/embed?src=collab.its.umich.edu_un8adj8phhfpi0ssvp8rcbsjgc@group.calendar.google.com&ctz=America/New_York
-			buffer = new StringBuilder(EMBEDED_GOOGLE_CALENDAR_URL);
-			buffer.append(saved_gcalid);
-			buffer.append(TIMEZONE_TAG);
-			buffer.append( TimeService.getLocalTimeZone().getID() );
-		} else {
-			template = "_nocalendar";
-		}
-		context.put("googlelink",buffer );
-		
 		// Get proxy base url from sakai.property file otherwise go directly to the google api's.
 		String baseUrl = org.sakaiproject.component.cover.ServerConfigurationService.getString("proxy.base.url");
 		if (!StringUtils.isEmpty(baseUrl)){
@@ -247,7 +231,7 @@ public class GCalendarAction extends PagedResourceActionII
 			
 			// if no google account - then use the permissions set above to control access to the calendar in Sakai.
 			if ( !hasGoogleAccount ) {
-				M_log.warn( "User has no google account: " + currentUser );
+				M_log.warn( "User has no google account: " + currentUser.getEid());
 			}
 			
 			// first time going into the gcalendar tool or no google account
@@ -282,12 +266,19 @@ public class GCalendarAction extends PagedResourceActionII
 			
 		    context.put("accesstoken", accessToken);
 	        context.put(SakaiGCalendarServiceStaticVariables.GCALID, site.getProperties().getProperty(SakaiGCalendarServiceStaticVariables.GCALID));
-	        this.saved_gcalid = site.getProperties().getProperty(SakaiGCalendarServiceStaticVariables.GCALID);
 	        context.put("viewDetailsAllowed", viewDetailsAllowed);
 	        context.put("createEventsAllowed", createEventsAllowed);
 	        context.put("gcalview", gcalview);
 	        context.put("menu", this.isOkToShowPermissionsButton(currentUserId, siteServiceString) );
 	        
+	        // Build the calendar url link.
+	        // Example of a link: http://www.google.com/calendar/embed?src=collab.its.umich.edu_un8adj8phhfpi0ssvp8rcbsjgc@group.calendar.google.com&ctz=America/New_York
+	        StringBuilder buffer = new StringBuilder(EMBEDED_GOOGLE_CALENDAR_URL);
+			buffer.append(gcalid);
+			buffer.append(TIMEZONE_TAG);
+			buffer.append( TimeService.getLocalTimeZone().getID() );
+			context.put("googlelink",buffer );
+			
 	        return "_delegateaccess";
 			
 		} catch (IdUnusedException e) {
