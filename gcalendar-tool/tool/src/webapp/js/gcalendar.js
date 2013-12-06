@@ -472,20 +472,34 @@ getEventTimeText = function(eventTimeValue) {
     return eventTimeText;                                     
 };
 
-//function to get event value (18:30) from event test (6:30pm)
+//function to get event value (18:30) from event value (6:30pm)
 getEventTimeValue = function(eventTimeText) {
-	// arrays are now global
-	// get rid of spaces and make it lc
-	var tmpString = eventTimeText.split(' ').join('');
-	tmpString = tmpString.toLowerCase();
-	
-    var i = eventTimeTextArray.indexOf(tmpString);
-    
-    // not found
-    if ( i == -1 )
-    	return -1;
-    
-    var eventTimeValue = eventTimeValueArray[i];
+	try{
+		var hours = Number(eventTimeText.match(/^(\d+)/)[1]);
+		var minutes = Number(eventTimeText.match(/:(\d+)/)[1]);
+		var AMPM = eventTimeText.match(/(..)$/)[1];
+	}
+	catch(err) { // Handle regex errors if bad values entered by the user
+		return -1;
+	}
+	// Perform some basic range validation
+	if (hours < 1 || hours > 12){
+		return -1;
+	}
+	else if (minutes < 0 || minutes > 59){
+		return -1;
+	}
+	else if (AMPM != "am" && AMPM != "pm"){
+		return -1;
+	}
+	// Format time to a 24-hour format.
+	if(AMPM == "pm" && hours<12) hours = hours+12;
+	if(AMPM == "am" && hours==12) hours = hours-12;
+	var sHours = hours.toString();
+	var sMinutes = minutes.toString();
+	if(hours<10) sHours = "0" + sHours;
+	if(minutes<10) sMinutes = "0" + sMinutes;
+	eventTimeValue = sHours + ":" + sMinutes;
     
     return eventTimeValue;                                     
 };
