@@ -260,6 +260,11 @@ public class GCalendarAction extends PagedResourceActionII
 				viewDetailsAllowed = false;
 				createEventsAllowed = false;
 			}
+			// Allow admin users to create events on their own sites only.
+			if (isSuper && currentUser.getEmail().equals(site.getCreatedBy().getEmail())){
+				viewDetailsAllowed = true;
+				createEventsAllowed = true;
+			}
 			
 			// build the menu
 			buildMenu(portlet, context, rundata, this.isOkToShowPermissionsButton(currentUserId, siteServiceString));
