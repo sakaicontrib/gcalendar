@@ -184,20 +184,6 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 	}
 	
 	private void contextHelper(String context, boolean toolPlacement ) {
-		if (toolPlacement) {
-			
-			Site site = null;
-			try {
-				site = m_siteService.getSite(context);
-			} catch (IdUnusedException e) {
-				M_log.error("contextHelper" + e.getMessage());
-			}
-			String emailAddress = site.getCreatedBy().getEmail();
-			boolean okToCreate = okToCreateGoogleCalendar(context);
-			if (okToCreate) {
-				enableGCalendar(context, emailAddress);
-			}
-		}
 	}
 
 	@Override
@@ -219,35 +205,6 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 		return toolIds;
 	}
 		
-	/**
-	 * Is it okay to create the google calendar?
-	 * 
-	 * @param context site identifier
-	 * @return true if it is okay to create the google calendar
-	 * 
-	 */
-	private boolean okToCreateGoogleCalendar(String context) {
-		
-		Site site = null;
-		
-		// get site and site title. We can not get here unless the site has been published.
-		try {
-			site = m_siteService.getSite(context);
-		} catch (IdUnusedException e) {
-			M_log.warn(e.getMessage());
-			return false; // site should not be created with out this information
-		}
-
-		// if the Google Calendar has already been created and the Google Calendar Id has already been saved in the site property
-		// return true
-		// else
-		// return false so we create the calendar in google.
-		if (site.getProperties().getProperty(SakaiGCalendarServiceStaticVariables.GCALID) != null) { 
-			return false;
-		}
-		// return true - it is okay to create the google calendar
-		return true;
-	}
 
 	/**
 	 * Get the Google Calendar ID from Google
@@ -272,33 +229,29 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 	/**
 	 * Create a calendar for the site.
 	 * 
-	 * @param context site identifier
-	 * @param emailAddress used to create the calendar service object (client)
-	 * 
+	 * @param Site to which a Google calendar will be added
+	 * @return String Google calendar Id
 	 */
-	private void enableGCalendar(String context, String emailAddress ) {
-
+	public String enableCalendar(Site site){
 		com.google.api.services.calendar.model.Calendar siteGCalendar = null;
 		
 		Calendar client;
 		
-		GoogleCredential credential = getGoogleCredential(emailAddress);
+		GoogleCredential credential = getGoogleCredential(site.getCreatedBy().getEmail());
 		if (credential == null) {
-			return; // user not authorized
+			return null; // user not authorized
 		}
 		
 		client = getGoogleClient( credential );
 
-		// get site
-		Site site = null;
-		try {
-			site = m_siteService.getSite(context);
-			siteGCalendar = createGoogleCalendar(site, client);
-		} catch (IdUnusedException e) {
-			M_log.error("enableGCalendar: " + e.getMessage());
-		}	
+		siteGCalendar = createGoogleCalendar(site, client);
+		if (siteGCalendar != null){
+			return siteGCalendar.getId();
+		}
+		else {
+			return null;
+		}
 	}
-
 	/**
 	 * Add new calendar for a Sakai site.
 	 * 
@@ -455,6 +408,11 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
     public void addUserToAccessControlList(Site site, String permission) {
     	
     	String gcalid = getGoogleCalendarID( site);
+    	if (gcalid == null){
+    		M_log.error("Google calendar id not found in site properties for site: " + site.getId());
+    		return;
+    	}
+    	
     	User currentUser = UserDirectoryService.getCurrentUser();
     	String currentUserId = currentUser.getId();
     	

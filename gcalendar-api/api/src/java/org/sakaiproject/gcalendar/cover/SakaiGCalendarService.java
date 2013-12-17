@@ -87,4 +87,19 @@ public class SakaiGCalendarService    {
 					 
 			return service.isValidGoogleUser(userid);
 		}
+	
+	/**
+	 * Create a Google Calendar for the site
+	 * @param Site Sakai site
+	 */
+	public static String enableCalendar(Site site){
+		org.sakaiproject.gcalendar.api.SakaiGCalendarService service = getInstance();
+		if (service == null) {
+			return null;
+		}
+				 
+		return service.enableCalendar(site);
+		
+	};
+
 }

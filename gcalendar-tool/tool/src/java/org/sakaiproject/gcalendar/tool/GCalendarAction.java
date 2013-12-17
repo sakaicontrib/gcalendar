@@ -159,9 +159,13 @@ public class GCalendarAction extends PagedResourceActionII
 		try {			
 			site = SiteService.getSite(siteId);
 			String gcalid = site.getProperties().getProperty(SakaiGCalendarServiceStaticVariables.GCALID);
-			// we need the gcalid to continue
+			// If the gcalendar Id is not stored in the site properties, we need to create the calendar.
 			if (gcalid == null) {
-				return "_nocalendar";
+				gcalid = SakaiGCalendarService.enableCalendar(site);
+				// If the creation of the calendar fails  we go to the "no calendar" page.
+				if (gcalid == null){
+					return "_nocalendar";
+				}
 			}
 			
 			User currentUser = UserDirectoryService.getCurrentUser();

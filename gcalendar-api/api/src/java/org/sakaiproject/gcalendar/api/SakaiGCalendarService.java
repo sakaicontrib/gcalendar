@@ -53,4 +53,10 @@ public interface SakaiGCalendarService extends EntityProducer {
 	 *        
 	 */
 	public boolean isValidGoogleUser(String userid);
+	
+	/**
+	 * Create a Google Calendar for the site
+	 * @param Site Sakai site
+	 */
+	public String enableCalendar(Site site);
 }
