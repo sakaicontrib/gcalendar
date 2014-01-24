@@ -20,4 +20,6 @@ public class SakaiGCalendarServiceStaticVariables {
 	public static final String RULE_ROLE_NONE = "none"; // Provides no access
 	
 	public static final String RULE_SCOPE_TYPE_USER = "user"; //  Limits the scope to a single user.
+	
+	public static final String ASSIGNMENT_DUEDATE_GCAL_EVENT_ID = "assignment_duedate_gcal_event_id";
 }

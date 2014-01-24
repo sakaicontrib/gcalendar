@@ -529,6 +529,7 @@ refreshCalendarItems = function( start, end, callback ) {
             'timeMax' : getTimeIso(end, false),
             'singleEvents' : true,
             'showDeleted'  : false,
+            'timeZone'	   : userTimeZone,
         },
         cache : false,
         async : false,

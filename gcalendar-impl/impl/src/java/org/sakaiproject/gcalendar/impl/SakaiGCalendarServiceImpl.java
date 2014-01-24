@@ -1,5 +1,5 @@
 /**********************************************************************************
- * $URL: https://source.sakaiproject.org/contrib/umich/gcalendar/gcalendar-api/api/src/java/org/sakaiproject/gcalendar/cover/SakaiGCalendarServiceImpl.java $
+ * $URL: https://source.sakaiproject.org/contrib/umich/gcalendar/gcalendar-api/api/src/java/org/sakaiproject/gcalendar/impl/SakaiGCalendarServiceImpl.java $
  * $Id: SakaiGCalendarServiceImpl.java 82630 2013-02-07 14:15:50Z wanghlxr@umich.edu $
  ***********************************************************************************
  *
@@ -22,16 +22,26 @@
 package org.sakaiproject.gcalendar.impl;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
+import java.util.TimeZone;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.sakaiproject.authz.api.FunctionManager;
 import org.sakaiproject.authz.api.SecurityService;
+import org.sakaiproject.calendar.api.CalendarEdit;
+import org.sakaiproject.calendar.api.CalendarEvent;
+import org.sakaiproject.calendar.api.CalendarEvent.EventAccess;
+import org.sakaiproject.calendar.api.CalendarEventEdit;
+import org.sakaiproject.calendar.api.CalendarEventVector;
+import org.sakaiproject.calendar.api.CalendarService;
+import org.sakaiproject.calendar.api.RecurrenceRule;
 import org.sakaiproject.component.api.ServerConfigurationService;
 import org.sakaiproject.entity.api.ContextObserver;
 import org.sakaiproject.entity.api.Entity;
@@ -40,12 +50,15 @@ import org.sakaiproject.entity.api.HttpAccess;
 import org.sakaiproject.entity.api.Reference;
 import org.sakaiproject.entity.api.ResourceProperties;
 import org.sakaiproject.entity.api.ResourcePropertiesEdit;
+import org.sakaiproject.exception.IdInvalidException;
 import org.sakaiproject.exception.IdUnusedException;
+import org.sakaiproject.exception.IdUsedException;
 import org.sakaiproject.exception.InUseException;
 import org.sakaiproject.exception.PermissionException;
 import org.sakaiproject.gcalendar.api.SakaiGCalendarService;
 import org.sakaiproject.google.impl.SakaiGoogleAuthServiceImpl;
 import org.sakaiproject.gcalendar.api.SakaiGCalendarServiceStaticVariables;
+import org.sakaiproject.javax.Filter;
 import org.sakaiproject.site.api.Site;
 import org.sakaiproject.site.api.SiteService;
 import org.sakaiproject.user.api.Preferences;
@@ -53,8 +66,10 @@ import org.sakaiproject.user.api.PreferencesEdit;
 import org.sakaiproject.user.api.PreferencesService;
 import org.sakaiproject.user.api.User;
 import org.sakaiproject.user.cover.UserDirectoryService;
+import org.sakaiproject.time.api.Time;
+import org.sakaiproject.time.api.TimeRange;
 import org.sakaiproject.time.cover.TimeService;
-import org.sakaiproject.authz.cover.AuthzGroupService;
+import org.sakaiproject.tool.cover.ToolManager;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -63,12 +78,15 @@ import com.google.api.client.http.HttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
+import com.google.api.client.util.DateTime;
 import com.google.api.client.util.Lists;
 import com.google.api.services.calendar.Calendar;
 import com.google.api.services.calendar.CalendarScopes;
 import com.google.api.services.calendar.model.AclRule;
 import com.google.api.services.calendar.model.AclRule.Scope;
-import com.google.api.services.calendar.model.CalendarListEntry;
+import com.google.api.services.calendar.model.Event;
+import com.google.api.services.calendar.model.EventDateTime;
+import com.google.api.services.calendar.model.Events;
 
 public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, ContextObserver {
 	
@@ -413,8 +431,7 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
     		return;
     	}
     	
-    	User currentUser = UserDirectoryService.getCurrentUser();
-    	String currentUserId = currentUser.getId();
+    	String currentUserId = getCurrentUserId();
     	
     	Calendar client;
     	
@@ -489,6 +506,16 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
     }
     
     /**
+     * Retrieves current user id.
+     * @return
+     */
+	private String getCurrentUserId() {
+		User currentUser = UserDirectoryService.getCurrentUser();
+    	String currentUserId = currentUser.getId();
+		return currentUserId;
+	}
+    
+    /**
 	 * Set editing mode on for user and add user if not existing
 	 */
 	private PreferencesEdit getPreferencesEdit(String userId) {
@@ -553,6 +580,16 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 		
 	}
 
+	/**
+	 * Creates service object to interact with Google API
+	 * @param email
+	 * @return Calendar client used to call api's
+	 */
+	private Calendar getGoogleClient(String email)	{
+		GoogleCredential credential = getGoogleCredential(email);
+		Calendar client = getGoogleClient(credential);
+		return client;
+	}
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -760,5 +797,612 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 			}
 		}
 	}
+	@Override
+	public String getContext() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	@Override
+	public boolean getExportEnabled() {
+		// This method is not supported.
+		return false;
+	}
+	@Override
+	public void setExportEnabled(boolean enable) {
+		// This method is not supported.
+		
+	}
+	@Override
+	public Time getModified() {
+		// This method is not supported.
+		return null;
+	}
+	@Override
+	public void setModified() {
+		// This method is not supported.
+		
+	}
+	@Override
+	public boolean allowGetEvents() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+	@Override
+	public boolean allowGetEvent(String eventId) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+	/**
+	 * Retrieves a list of events from a calendar based on a date range.
+	 * The filter parameter is not used.
+	 */
+	@Override
+	public List<CalendarEvent> getEvents(TimeRange range, Filter filter)
+			throws PermissionException {
+		
+		Site site = getSite();
+		// Retrieve gcalendar id from site properties
+		String gcalid = site.getProperties().getProperty(SakaiGCalendarServiceStaticVariables.GCALID);	
+		if (gcalid == null){
+			M_log.error("Calendar Id not found on site properties. Cannot retrieve events!!!");
+			return new ArrayList<CalendarEvent>();
+		}
+		
+		Events calendarEvents = null;
+		
+		// Map the Calendar range date values to values that can be used in the
+		// Google API call.
+		Time startTime = range.firstTime();
+		Time endTime = range.lastTime();
+		
+		Date startDate = new Date(startTime.getTime());
+		Date endDate = new Date(endTime.getTime());
+		
+		DateTime start = new DateTime(startDate);
+		DateTime end = new DateTime(endDate);
+		
+		// Create client object to interact with Google API
+		Calendar client = getGoogleClient(site.getCreatedBy().getEmail());
+
+		// Call Google API
+		try {
+			calendarEvents = client.events().list(gcalid).setTimeMin(start).setTimeMax(end).execute();
+			M_log.debug("Found " + calendarEvents.getItems().size() + " events for Google Calendar");
+		} catch (IOException e) {
+			M_log.error("Failed to query Google calendar for events." + e.getMessage());
+		}
+
+		// Add Google calendar events to list
+		List<CalendarEvent> calendarEventList = new ArrayList<CalendarEvent>();
+		
+		for (Event evt : calendarEvents.getItems()){
+			calendarEventList.add(createEventFromGoogleCalendarEvent(evt));			
+		}
+		
+		return calendarEventList;
+	}
+	/**
+	 * Retrieve a specific event from the Google Calendar.
+	 */
+	@Override
+	public CalendarEvent getEvent(String eventId) throws IdUnusedException,
+			PermissionException {
+		// Retrieve Google event from Google calendar
+		Event gEvent = getGoogleCalendarEvent(eventId);
+		// Convert the Google event to a calendar event
+		CalendarEvent calEvent = (CalendarEvent)createEventFromGoogleCalendarEvent(gEvent);
+		return calEvent;
+	}
 	
+	@Override
+	public String getEventFields() {
+		M_log.warn("This method is not implemented");
+		return null;
+	}
+	
+	/**
+	 * Checks if current user has permission to add an event to the Google calendar.
+	 */
+	@Override
+	public boolean allowAddEvent() {
+		String currentUserId = getCurrentUserId();
+		
+		String siteId = ToolManager.getCurrentPlacement().getContext();
+		String siteServiceString = org.sakaiproject.site.cover.SiteService.siteReference(siteId);
+		if ( securityService.unlock(currentUserId, SakaiGCalendarServiceStaticVariables.SECURE_GCAL_EDIT, siteServiceString)){
+			return true;
+		}
+		else{
+			return false;
+		}
+	}
+	
+	@Override
+	public boolean allowAddCalendarEvent() {
+		String currentUserId = getCurrentUserId();
+		
+		String siteId = ToolManager.getCurrentPlacement().getContext();
+		String siteServiceString = org.sakaiproject.site.cover.SiteService.siteReference(siteId);
+		if ( securityService.unlock(currentUserId, SakaiGCalendarServiceStaticVariables.SECURE_GCAL_EDIT, siteServiceString)){
+			return true;
+		}
+		else{
+			return false;
+		}
+	}
+	/**
+	 * Adds an event to the Google Calendar.
+	 */
+	@Override
+	public CalendarEvent addEvent(TimeRange range, String displayName,
+			String description, String type, String location,
+			EventAccess access, Collection groups, List attachments)
+			throws PermissionException {
+		
+		CalendarEvent calEvent = null;
+		// Verify user has permission to add an event.
+		if (allowAddEvent()){
+			Site site = getSite();
+			// Retrieve Google calendar id from site properties
+			String gcalid = site.getProperties().getProperty(SakaiGCalendarServiceStaticVariables.GCALID);	
+			if (gcalid == null){
+				M_log.error("Calendar Id not found on site properties. Cannot add event!!!");
+				return null;
+			}
+			// Create client object to interact with Google api
+			// We use the site's creator e-mail because the site's Google calendar 
+			// was created under this account.
+			Calendar client = getGoogleClient(site.getCreatedBy().getEmail());
+			
+			// Create a Google event object with the event details
+			Event event = createGoogleCalendarEvent(range, displayName, description, type, location, access, groups, attachments);
+			
+			// Call Google API to add the event to the calendar
+			Event createdEvent = null;
+			try {
+				createdEvent = client.events().insert(gcalid, event).execute();
+				
+				M_log.debug("Google Calendar Event Created:  " + createdEvent.getId());
+			} catch (IOException e) {
+				M_log.error("Error adding event to Google Calendar " + e.getMessage());
+			}
+			// Map the values from the Google Calendar event to a Calendar Event
+			calEvent = createEventFromGoogleCalendarEvent(createdEvent);
+			return calEvent;
+		}
+		else{
+			String currentUserId = getCurrentUserId();
+			// There is no reference id to pass to the PermissionException constructor so we pass in a "".
+			throw new PermissionException(currentUserId, SakaiGCalendarServiceStaticVariables.SECURE_GCAL_EDIT, "");
+		}
+	}
+	
+	/**
+	 * Adds an event to the Google Calendar.
+	 */
+	@Override
+	public CalendarEvent addEvent(TimeRange range, String displayName,
+			String description, String type, String location, List attachments)
+			throws PermissionException {
+		CalendarEvent calEvent = addEvent(range,displayName,description,type,location,attachments);
+		return calEvent;
+	}
+
+	/**
+	 * This method is not supported in Google Calendar.
+	 */
+	@Override
+	public CalendarEventEdit addEvent() throws PermissionException {
+		M_log.warn("This method is not supported in Google Calendar.");
+		throw new PermissionException(getCurrentUserId(), SakaiGCalendarServiceStaticVariables.SECURE_GCAL_EDIT, "");
+	}
+
+	/**
+	 * Checks if current user has permission to modify an event on the Google calendar.
+	 */
+	@Override
+	public boolean allowEditEvent(String eventId) {
+		String currentUserId = getCurrentUserId();
+		
+		String siteId = ToolManager.getCurrentPlacement().getContext();
+		String siteServiceString = org.sakaiproject.site.cover.SiteService.siteReference(siteId);
+		if ( securityService.unlock(currentUserId, SakaiGCalendarServiceStaticVariables.SECURE_GCAL_EDIT, siteServiceString)){
+			return true;
+		}
+		else{
+			return false;
+		}
+	}
+	
+	// Retrieves event for editing. 
+	// I don't think the parameter editType is applicable to this implementation.
+	@Override
+	public CalendarEventEdit getEditEvent(String eventId, String editType)
+			throws IdUnusedException, PermissionException, InUseException {
+
+		// Retrieve Google event from Google calendar
+		Event gEvent = getGoogleCalendarEvent(eventId);
+		// Convert the Google event to an editable calendar event
+		CalendarEventEdit calEvent = createEventFromGoogleCalendarEvent(gEvent);
+		return calEvent;
+	}
+	
+	@Override
+	public void commitEvent(CalendarEventEdit edit, int intention) {
+		// There is nothing to be done here.
+	}
+	
+	@Override
+	public void commitEvent(CalendarEventEdit edit) {
+		// There is nothing to be done here.
+	}
+	
+	@Override
+	public void cancelEvent(CalendarEventEdit edit) {
+		// There is nothing to be done here.
+	}
+	/**
+	 * This method is not supported.
+	 */
+	@Override
+	public CalendarEventEdit mergeEvent(Element el) throws PermissionException,
+			IdUsedException {
+		M_log.info("This functionality is not supported.");
+		return null;
+	}
+	
+	/**
+	 * Checks permission to remove an event from the Google calendar.
+	 */
+	@Override
+	public boolean allowRemoveEvent(CalendarEvent event) {
+		
+		return allowEditEvent(event.getId());
+	}
+	
+	//TODO: Implement logic to handle intention.
+	@Override
+	public void removeEvent(CalendarEventEdit edit, int intention)
+			throws PermissionException {
+		// Check user has permission to remove event from the Google calendar
+		if(allowRemoveEvent(edit)){
+			removeEvent(edit);
+		}
+		else{
+			String currentUserId = getCurrentUserId();
+			// Using the GCal event id as the last parameter of the PermissionException constructor.
+			throw new PermissionException(currentUserId, SakaiGCalendarServiceStaticVariables.SECURE_GCAL_EDIT, edit.getId());
+		}
+	}
+
+	/**
+	 * Removes an event from the Google calendar.
+	 */
+	@Override
+	public void removeEvent(CalendarEventEdit edit) throws PermissionException {
+		// Check user has permission to remove event from the Google calendar
+		if (allowRemoveEvent(edit)){
+			Site site = getSite();
+			// Retrieve Google calendar id from site properties
+			String gcalid = site.getProperties().getProperty(SakaiGCalendarServiceStaticVariables.GCALID);	
+			if (gcalid == null){
+				M_log.error("Calendar Id not found on site properties. Cannot delete event!!!");
+				return;
+			}
+			// Create client object to interact with Google API
+			Calendar client = getGoogleClient(site.getCreatedBy().getEmail());
+			
+			// Call Google API
+			try {
+				client.events().delete(gcalid, edit.getId()).execute();
+				M_log.debug("Google Calendar Event Successfully Deleted..." + edit.getId());
+			} catch (IOException e) {
+				M_log.error("Error deleting event from Google Calendar. " + e.getMessage());
+			}
+		}
+		else{
+			String currentUserId = getCurrentUserId();
+			// Using the GCal event id as the last parameter of the PermissionException constructor.
+			throw new PermissionException(currentUserId, SakaiGCalendarServiceStaticVariables.SECURE_GCAL_EDIT, edit.getId());
+		}
+	}
+	
+	@Override
+	public Collection getGroupsAllowAddEvent() {
+		// Groups are not supported
+		return null;
+	}
+	@Override
+	public Collection getGroupsAllowGetEvent() {
+		// Groups are not supported
+		return null;
+	}
+	@Override
+	public Collection getGroupsAllowRemoveEvent(boolean own) {
+		// Groups are not supported
+		return null;
+	}
+	/**
+	 * Returns the id of the Google calendar.
+	 */
+	@Override
+	public String getId() {
+		Site site = getSite();
+		// Retrieve Google calendar id from site properties
+		String gcalid = site.getProperties().getProperty(SakaiGCalendarServiceStaticVariables.GCALID);	
+		return gcalid;
+	}
+	@Override
+	public ResourceProperties getProperties() {
+		// This method is not supported.
+		return null;
+	}
+	@Override
+	public String getReference() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	@Override
+	public String getReference(String arg0) {
+		// This method is not supported.
+		return null;
+	}
+	@Override
+	public String getUrl() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	@Override
+	public String getUrl(String arg0) {
+		// This method is not supported.
+		return null;
+	}
+	@Override
+	public Element toXml(Document arg0, Stack<Element> arg1) {
+		// This method is not supported.
+		return null;
+	}
+	
+	// Retrieve site information
+	private Site getSite(){
+		String siteId = ToolManager.getCurrentPlacement().getContext();
+		Site site = null;
+		try {
+			site = this.m_siteService.getSite(siteId);
+		} catch (IdUnusedException e) {
+			M_log.error("Error retrieving site information: " + e.getMessage());
+		}
+		return site;
+	}
+	
+	// Creates a Google calendar event with the values provided.
+	// The return Event is used to call the Google API
+	// The type parameter is ignored and access, groups and attachments are not supported.
+	private Event createGoogleCalendarEvent(TimeRange range, String displayName,
+									String description, String type, String location,
+									EventAccess access, Collection groups, List attachments) {
+		// Log warnings if unsupported parameters are provided.
+		if (access != null){
+			M_log.warn("access parameter is not supported");
+		}
+		if (groups != null){
+			M_log.warn("groups parameter is not supported");
+		}
+		if (attachments != null){
+			M_log.warn("attachments parameter is not supported");
+		}
+		Event event = new Event();
+
+		event.setSummary(displayName);
+		event.setDescription(description);
+		event.setLocation(location);
+		
+		// Handle event time details
+		Time startTime = range.firstTime();
+		Date startDate = new Date(startTime.getTime());
+		Time endTime = range.lastTime();
+		Date endDate = new Date(endTime.getTime());
+		DateTime start = new DateTime(startDate);
+		event.setStart(new EventDateTime().setDateTime(start));
+		DateTime end = new DateTime(endDate);
+		event.setEnd(new EventDateTime().setDateTime(end));
+		
+		return event;
+	}
+	
+	/**
+	 * Maps some of the Google event fields to a Calendar Event.
+	 * @param event
+	 * @return
+	 */
+	private CalendarEventEdit createEventFromGoogleCalendarEvent(Event event){
+		SakaiGCalendarEventImpl calEvent = new SakaiGCalendarEventImpl();
+		calEvent.setId(event.getId());
+		calEvent.setDescription(event.getDescription());
+		calEvent.setDisplayName(event.getSummary());
+		calEvent.setLocation(event.getLocation());
+		// Handle event start and end times.
+		try{
+			calEvent.setRange(TimeService.newTimeRange(TimeService.newTime(event.getStart().getDateTime().getValue()), TimeService.newTime(event.getEnd().getDateTime().getValue())));
+		}
+		catch (NullPointerException ex){
+			M_log.error("Unexpected error with Google Calendar event. " + ex.getMessage());
+		}
+		
+		return calEvent;
+	}
+	
+	/**
+	 * Retrieves an event from the Google calendar by calling the Google API
+	 * @param eventId
+	 * @return a Google calendar event
+	 */
+	private Event getGoogleCalendarEvent(String eventId){
+		if (eventId == null){ // Should have an id before calling the API.
+			M_log.error("Failed to get Google calendar event. EventId cannot be null!!!");
+			return null;
+		}
+		Site site = getSite();
+		// Retrieve Google calendar id from site properties
+		String gcalid = site.getProperties().getProperty(SakaiGCalendarServiceStaticVariables.GCALID);	
+		if (gcalid == null){
+			M_log.error("Calendar Id not found on site properties. Cannot add event!!!");
+			return null;
+		}
+		// Create client object to interact with Google API
+		Calendar client = getGoogleClient(site.getCreatedBy().getEmail());
+
+		Event event = null;
+		// Call Google API
+		try {
+			event = client.events().get(gcalid, eventId).execute();
+		} catch (IOException e) {
+			M_log.error("Error retrieving event from Google Calendar. " + e.getMessage());
+		}
+		return event;
+	}
+	@Override
+	public List getCalendars() {
+		// This method is not supported.
+		return null;
+	}
+	@Override
+	public CalendarEdit addCalendar(String ref) throws IdUsedException,
+			IdInvalidException, PermissionException {
+		// This method is not supported.
+		return null;
+	}
+	@Override
+	public boolean allowGetCalendar(String ref) {
+		//TODO Auto-generated method stub
+		return false;
+	}
+	@Override
+	public org.sakaiproject.calendar.api.Calendar getCalendar(String ref)
+			throws IdUnusedException, PermissionException {
+		org.sakaiproject.calendar.api.Calendar gCalService = (org.sakaiproject.calendar.api.Calendar) org.sakaiproject.gcalendar.cover.SakaiGCalendarService.getInstance();
+		return gCalService;
+	}
+	@Override
+	public boolean allowImportCalendar(String ref) {
+		// This method is not supported.
+		return false;
+	}
+	@Override
+	public boolean allowSubscribeCalendar(String ref) {
+		// This method is not supported.
+		return false;
+	}
+	@Override
+	public boolean allowEditCalendar(String ref) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+	@Override
+	public boolean allowMergeCalendar(String ref) {
+		// This method is not supported.
+		return false;
+	}
+	@Override
+	public boolean allowSubscribeThisCalendar(String arg0) {
+		// This method is not supported.
+		return false;
+	}
+	@Override
+	public CalendarEdit editCalendar(String ref) throws IdUnusedException,
+			PermissionException, InUseException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	@Override
+	public void commitCalendar(CalendarEdit edit) {
+		// This method is not supported.
+		
+	}
+	@Override
+	public void removeCalendar(CalendarEdit edit) throws PermissionException {
+		// This method is not supported.
+		
+	}
+	@Override
+	public String calendarICalReference(Reference ref) {
+		// This method is not supported.
+		return null;
+	}
+	@Override
+	public String calendarOpaqueUrlReference(Reference arg0) {
+		// This method is not supported.
+		return null;
+	}
+	@Override
+	public void cancelCalendar(CalendarEdit edit) {
+		// This method is not supported.
+		
+	}
+	// Return the Google calendar id
+	@Override
+	public String calendarReference(String context, String id) {
+		String gcalId = getId(); // Just call the existing getId() method.
+		return gcalId;
+	}
+	@Override
+	public String calendarPdfReference(String context, String id,
+			int scheduleType, String timeRangeString, String userName,
+			TimeRange dailyTimeRange) {
+		// This method is not supported.
+		return null;
+	}
+	@Override
+	public String calendarSubscriptionReference(String context, String id) {
+		// This method is not supported.
+		return null;
+	}
+	@Override
+	public boolean getExportEnabled(String ref) {
+		// This method is not supported.
+		return false;
+	}
+	@Override
+	public void setExportEnabled(String ref, boolean enable) {
+		// This method is not supported.
+		
+	}
+	@Override
+	public String eventReference(String context, String calendarId, String id) {
+		// This method is not supported.
+		return null;
+	}
+	@Override
+	public String eventSubscriptionReference(String context, String calendarId,
+			String id) {
+		// This method is not supported.
+		return null;
+	}
+	@Override
+	public CalendarEventVector getEvents(List references, TimeRange range) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	@Override
+	public RecurrenceRule newRecurrence(String frequency) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	@Override
+	public RecurrenceRule newRecurrence(String frequency, int interval) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	@Override
+	public RecurrenceRule newRecurrence(String frequency, int interval,
+			int count) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	@Override
+	public RecurrenceRule newRecurrence(String frequency, int interval,
+			Time until) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }
