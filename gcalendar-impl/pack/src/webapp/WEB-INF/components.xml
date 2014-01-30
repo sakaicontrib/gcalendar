@@ -3,7 +3,7 @@
 
 <beans>
 
-	<bean id="org.sakaiproject.gcalendar.api.SakaiGCalendarService"
+	<bean id="org.sakaiproject.additional.calendar"
                         class="org.sakaiproject.gcalendar.impl.SakaiGCalendarServiceImpl"
                         init-method="init"
                         destroy-method="destroy"

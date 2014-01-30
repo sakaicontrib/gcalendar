@@ -33,10 +33,10 @@ public class SakaiGCalendarService    {
 	 */
 	public static org.sakaiproject.gcalendar.api.SakaiGCalendarService getInstance() {
 		if (ComponentManager.CACHE_COMPONENTS) {
-			if (m_instance == null) m_instance = (org.sakaiproject.gcalendar.api.SakaiGCalendarService) ComponentManager.get(org.sakaiproject.gcalendar.api.SakaiGCalendarService.class);
+			if (m_instance == null) m_instance = (org.sakaiproject.gcalendar.api.SakaiGCalendarService) ComponentManager.get("org.sakaiproject.additional.calendar");
 			return m_instance;
 		} else {
-			return (org.sakaiproject.gcalendar.api.SakaiGCalendarService) ComponentManager.get(org.sakaiproject.gcalendar.api.SakaiGCalendarService.class);
+			return (org.sakaiproject.gcalendar.api.SakaiGCalendarService) ComponentManager.get("org.sakaiproject.additional.calendar");
 		}
 	}
 

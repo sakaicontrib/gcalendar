@@ -590,6 +590,24 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 		Calendar client = getGoogleClient(credential);
 		return client;
 	}
+	
+	public boolean siteHasTool(String siteId){
+		boolean rv = false;
+		try
+		{
+			Site site = org.sakaiproject.site.cover.SiteService.getSite(siteId);
+			if (site.getToolForCommonId("sakai.gcalendar") != null)
+			{
+				rv = true;
+			}
+		}
+		catch (Exception e)
+		{
+			M_log.warn(this + "siteHasTool" + e.getMessage() + siteId);
+		}
+		return rv;
+		
+	}
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -1094,6 +1112,7 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 			
 			// Call Google API
 			try {
+				M_log.debug("Going to delete Google calendar event with id: " + edit.getId());
 				client.events().delete(gcalid, edit.getId()).execute();
 				M_log.debug("Google Calendar Event Successfully Deleted..." + edit.getId());
 			} catch (IOException e) {
@@ -1236,8 +1255,9 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 	 * Retrieves an event from the Google calendar by calling the Google API
 	 * @param eventId
 	 * @return a Google calendar event
+	 * @throws IdUnusedException 
 	 */
-	private Event getGoogleCalendarEvent(String eventId){
+	private Event getGoogleCalendarEvent(String eventId) throws IdUnusedException{
 		if (eventId == null){ // Should have an id before calling the API.
 			M_log.error("Failed to get Google calendar event. EventId cannot be null!!!");
 			return null;
@@ -1258,6 +1278,9 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 			event = client.events().get(gcalid, eventId).execute();
 		} catch (IOException e) {
 			M_log.error("Error retrieving event from Google Calendar. " + e.getMessage());
+			if (e.getMessage().indexOf("404") != -1){
+				throw new IdUnusedException(eventId);
+			}
 		}
 		return event;
 	}
