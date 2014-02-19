@@ -20,12 +20,11 @@
  **********************************************************************************/
 package org.sakaiproject.gcalendar.api;
 
-import org.sakaiproject.calendar.api.Calendar;
 import org.sakaiproject.calendar.api.CalendarService;
 import org.sakaiproject.entity.api.EntityProducer;
 import org.sakaiproject.site.api.Site;
 
-public interface SakaiGCalendarService extends EntityProducer, Calendar, CalendarService {
+public interface SakaiGCalendarService extends EntityProducer, CalendarService {
 	
 	/**
 	 * get the Google Calendar Access Token
