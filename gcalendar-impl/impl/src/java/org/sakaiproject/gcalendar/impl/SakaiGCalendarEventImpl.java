@@ -22,7 +22,9 @@
 package org.sakaiproject.gcalendar.impl;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Stack;
 
 import org.sakaiproject.calendar.api.Calendar;
@@ -43,6 +45,7 @@ public class SakaiGCalendarEventImpl implements CalendarEventEdit{
 	private String description;
 	private String displayName;
 	private String location;
+	private Map<String,String> fieldName = new HashMap<String,String>();
 
 	@Override
 	public String getUrl() {
@@ -132,8 +135,7 @@ public class SakaiGCalendarEventImpl implements CalendarEventEdit{
 
 	@Override
 	public String getField(String name) {
-		// TODO Auto-generated method stub
-		return null;
+		return fieldName.get(name);
 	}
 
 	@Override
@@ -274,7 +276,7 @@ public class SakaiGCalendarEventImpl implements CalendarEventEdit{
 
 	@Override
 	public void setField(String name, String value) {
-		// TODO Auto-generated method stub
+		fieldName.put(name, value);
 		
 	}
 
