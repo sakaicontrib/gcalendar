@@ -18,14 +18,10 @@ Sakai configuration:
    google.service.account.email=
    google.private.key=
 
-   if using a proxy server to access the google api's, add the following two properties to sakai.properties:
+5. A proxy cross domain server is built as part of the gcalendar war file. You should
+   add the following two properties to sakai.properties:
    proxy.base.url=../../   
-   proxy.name=crossdomain/gcalendar 
-
-5. Deploy a proxy defined for gcalendar, for example:
-   a. svn co https://source.sakaiproject.org/contrib/umich/proxy-crossdomain/trunk/ proxy-crossdomain
-   b. cd proxy-crossdomain
-   c. mvn install sakai:deploy
+   proxy.name=sakai-gcalendar-tool/gcalendar 
 
 6. For testing, make sure the Sakai user account has an email which matches the Google account
    
@@ -60,4 +56,10 @@ Implementation Notes:
       * User Interface: 
          * Full Calendar JQuery plugin has been used to make direct AJAX calls to Google, to do get/post Google event operations. Doing this directly n the front-end would is more efficient and faster, than to process it in the back-end. However, at the server level, it will still be responsible to perform various other operations like authorization, creating a new Calendar for the site and others.
 
-         * The original source of fullcalendar-1.5.3 library was downloaded from http://arshaw.com/fullcalendar/download/
+         * The original source of fullcalendar-1.6.4 library was downloaded from http://arshaw.com/fullcalendar/download/
+
+Known Issues:
+=============
+
+	Events with 0 duration (i.e. start time equal to end time) show up in FullCalendar as a two-hour event when viewed under "week" and "day" views.
+

@@ -7,11 +7,12 @@
 <link rel='stylesheet' type='text/css' href='/sakai-gcalendar-tool/js/timepicker/lib/base.css'/> ## Used in Timepicker style
 <link rel='stylesheet' type='text/css' href='/sakai-gcalendar-tool/js/timepicker/jquery.timepicker.css'/> ## Timepicker style
 
-<script type='text/javascript' src='/library/fullcalendar/js/jquery/1.7.1/jquery-1.7.1.min.js'></script> ## handles eventclick
+<!-- <script type='text/javascript' src='/library/fullcalendar/js/jquery/1.7.1/jquery-1.7.1.min.js'></script> --> ## handles eventclick 
+<script type='text/javascript' src='/sakai-gcalendar-tool/js/jquery_temp.1.7.1.js'></script>
 <script type='text/javascript' src='/library/js/jquery/ui/1.8.4/jquery-ui-1.8.4.full.min.js'></script> ## for dayClick
 <script type='text/javascript' src='/library/fullcalendar/lib/jquery-ui.custom.min.js'></script> ## new js library for UI code
 
-<script type='text/javascript' src='/library/fullcalendar/fullcalendar.min.js'></script>
+<script type='text/javascript' src='/library/fullcalendar/fullcalendar.js'></script>
 
 <script type='text/javascript' src='/sakai-gcalendar-tool/js/timepicker/lib/base.js'></script> ## Used in timepicker plugin
 <script type='text/javascript' src='/sakai-gcalendar-tool/js/timepicker/jquery.timepicker.min.js'></script> ## Plugin for timepicker

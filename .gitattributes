@@ -1,4 +1,5 @@
 * text=auto !eol
+/PROXY_README.TXT -text
 gcalendar-api/api/src/java/org/sakaiproject/gcalendar/api/SakaiGCalendarService.java -text
 gcalendar-api/api/src/java/org/sakaiproject/gcalendar/api/SakaiGCalendarServiceStaticVariables.java -text svneol=unset#text/plain
 gcalendar-api/api/src/java/org/sakaiproject/gcalendar/cover/SakaiGCalendarService.java -text
