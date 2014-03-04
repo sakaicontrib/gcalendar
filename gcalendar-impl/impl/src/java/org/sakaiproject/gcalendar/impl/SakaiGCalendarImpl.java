@@ -319,9 +319,9 @@ public class SakaiGCalendarImpl implements Calendar {
 		
 		// Build the link url.
 		StringBuilder assignmentLink = new StringBuilder().append(portal)
-			.append("/directtool/").append(toolConfig.getId()).append("?assignmentId=")
+			.append("/directtool/").append(toolConfig.getId()).append("?assignmentReference=")
 			.append("/assignment/a/").append(toolConfig.getSiteId()).append("/")
-			.append(assignmentId).append("&panel=Main&sakai_action=doView_assignment");
+			.append(assignmentId).append("&panel=Main&sakai_action=doView_submission");
 		// For now just write it to the log
 		M_log.info("Assignment Link: " + assignmentLink.toString());
 				
