@@ -863,7 +863,6 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 		// This method is not supported.
 		return false;
 	}
-	@Override
 	public boolean allowSubscribeThisCalendar(String arg0) {
 		// This method is not supported.
 		return false;
@@ -889,7 +888,6 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 		// This method is not supported.
 		return null;
 	}
-	@Override
 	public String calendarOpaqueUrlReference(Reference arg0) {
 		// This method is not supported.
 		return null;
