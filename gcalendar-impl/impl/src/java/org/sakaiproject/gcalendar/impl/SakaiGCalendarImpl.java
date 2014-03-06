@@ -306,36 +306,9 @@ public class SakaiGCalendarImpl implements Calendar {
 		// There is nothing to be done here.
 	}
 	
-	// Using this method to update a calendar event with a link to the corresponding assignment.
 	@Override
 	public void commitEvent(CalendarEventEdit edit) {
-		
-		// Get the pieces that make up the url that links to the assignment.
-		String assignmentId = edit.getField(AssignmentConstants.NEW_ASSIGNMENT_DUEDATE_CALENDAR_ASSIGNMENT_ID);
-		String portal = m_serverConfigurationService.getPortalUrl();
-		// Get information from the site.
-		Site site = getSite();
-		ToolConfiguration toolConfig = site.getToolForCommonId("sakai.assignment.grades");
-		
-		// Build the link url.
-		StringBuilder assignmentLink = new StringBuilder().append(portal)
-			.append("/directtool/").append(toolConfig.getId()).append("?assignmentReference=")
-			.append("/assignment/a/").append(toolConfig.getSiteId()).append("/")
-			.append(assignmentId).append("&panel=Main&sakai_action=doView_submission");
-		// For now just write it to the log
-		M_log.info("Assignment Link: " + assignmentLink.toString());
-				
-		Event gEvent = null;
-		try {
-			// Retrieve event and update appropriate field with link to assignment.
-			gEvent = getGoogleCalendarEvent(edit.getId());
-			gEvent.setDescription(gEvent.getDescription() + assignmentLink);
-			client.events().update(site.getProperties().getProperty(SakaiGCalendarServiceStaticVariables.GCALID), gEvent.getId(), gEvent).execute();
-		} catch (IdUnusedException e) {
-			M_log.error("Cound not find event in Google calendar " + e.getMessage());
-		} catch (IOException e) {
-			M_log.error("Problem updating Google calendar event " + e.getMessage());
-		}
+		// There is nothing to be done here.		
 	}
 	
 	@Override
