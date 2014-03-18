@@ -33,6 +33,7 @@ import org.sakaiproject.time.cover.TimeService;
 import org.sakaiproject.tool.cover.ToolManager;
 import org.sakaiproject.user.api.User;
 import org.sakaiproject.user.cover.UserDirectoryService;
+import org.sakaiproject.util.ResourceLoader;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -57,6 +58,10 @@ public class SakaiGCalendarImpl implements Calendar {
 	
 	/** Client used to invoke the Google API's */
 	private com.google.api.services.calendar.Calendar client;
+	
+	/** Load Resource bundle using current language locale */
+	// Note: this is the resource bundle from the sakai schedule tool, not the gcalendar rb.
+	private static ResourceLoader calRb = new ResourceLoader("calendar");
 	
 	public SakaiGCalendarImpl(com.google.api.services.calendar.Calendar client){
 		this.client = client;
@@ -306,9 +311,46 @@ public class SakaiGCalendarImpl implements Calendar {
 		// There is nothing to be done here.
 	}
 	
+	// Using this method to update a calendar event with a link to the corresponding assignment.
 	@Override
 	public void commitEvent(CalendarEventEdit edit) {
-		// There is nothing to be done here.		
+		
+		// Get the pieces that make up the url that links to the assignment.
+		String assignmentId = edit.getField(AssignmentConstants.NEW_ASSIGNMENT_DUEDATE_CALENDAR_ASSIGNMENT_ID);
+		String portal = m_serverConfigurationService.getPortalUrl();
+		// Get information from the site.
+		Site site = getSite();
+		ToolConfiguration toolConfig = site.getToolForCommonId("sakai.assignment.grades");
+		
+		// Build the link url. We provide both the assignment reference and the assignment id as both are
+		// used in the AssignmentAction class.
+		StringBuilder assignmentLink = new StringBuilder().append(portal)
+			.append("/directtool/").append(toolConfig.getId()).append("?assignmentReference=")
+			.append("/assignment/a/").append(toolConfig.getSiteId()).append("/")
+			.append(assignmentId)
+			.append("&assignmentId=")
+			.append(assignmentId)
+			.append("&panel=Main&sakai_action=doCheck_view");
+
+		// Create a source object to provide a link back to the assignment.
+		Event.Source src = new Event.Source();
+		src.setTitle(calRb.getString("gen.assignmentlink")); // This comes from the sakai calendar resource bundle
+		src.setUrl(assignmentLink.toString());
+
+		Event gEvent = null;
+		try {
+			// Retrieve event and update appropriate field with link to assignment.
+			gEvent = getGoogleCalendarEvent(edit.getId());
+			if (gEvent != null){
+				gEvent.setSource(src);
+				gEvent.setDescription(gEvent.getDescription() + " " + calRb.getString("gen.assignmentlink") + ": " + assignmentLink.toString());
+				client.events().update(site.getProperties().getProperty(SakaiGCalendarServiceStaticVariables.GCALID), gEvent.getId(), gEvent).execute();
+			}
+		} catch (IdUnusedException e) {
+			M_log.error("Cound not find event in Google calendar " + e.getMessage());
+		} catch (IOException e) {
+			M_log.error("Problem updating Google calendar event " + e.getMessage());
+		}
 	}
 	
 	@Override

@@ -86,11 +86,18 @@
 			<artifactId>google-http-client-jackson2</artifactId>
 			<version>1.17.0-rc</version>
 		</dependency>
-		<!--  Calendar Interfaces -->
+		<!--  Calendar dependencies -->
         <dependency>
             <groupId>org.sakaiproject.calendar</groupId>
             <artifactId>sakai-calendar-api</artifactId>
         </dependency>        
+        <dependency>
+            <groupId>org.sakaiproject.calendar</groupId>
+            <artifactId>sakai-calendar-bundles</artifactId>
+            <version>10.0-SNAPSHOT</version>
+        </dependency>
+        
+        <!-- Assignment dependency -->
         <dependency>
             <groupId>org.sakaiproject.assignment</groupId>
             <artifactId>sakai-assignment-api</artifactId>
