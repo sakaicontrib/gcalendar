@@ -186,8 +186,8 @@ public class GCalendarAction extends PagedResourceActionII
 	    	
 	    	boolean isSuper = securityService.isSuperUser(currentUserId);
 
-	    	// If the user IsSuperUser or has gcal.edit, they can edit
-	    	if(isSuper || securityService.unlock(currentUserId, org.sakaiproject.site.api.SiteService.SECURE_UPDATE_SITE_MEMBERSHIP, siteServiceString  ) ) { 
+	    	// If the user IsSuperUser or is the site creator, the user gets edit privileges on gcal.
+	    	if(isSuper || emailAddress.equals(site.getCreatedBy().getEmail()) ) { 
 				viewDetailsAllowed = true;
 				createEventsAllowed = true;
 				gcalview = true;
