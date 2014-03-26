@@ -268,12 +268,11 @@ public class SakaiGCalendarImpl implements Calendar {
 	}
 
 	/**
-	 * This method is not supported in Google Calendar.
+	 * Create a skeleton event that can later be updated with additional details. 
 	 */
 	@Override
 	public CalendarEventEdit addEvent() throws PermissionException {
-		M_log.warn("This method is not supported in Google Calendar.");
-		throw new PermissionException(getCurrentUserId(), SakaiGCalendarServiceStaticVariables.SECURE_GCAL_EDIT, "");
+		return new SakaiGCalendarEventImpl();
 	}
 
 	/**
@@ -311,45 +310,64 @@ public class SakaiGCalendarImpl implements Calendar {
 		// There is nothing to be done here.
 	}
 	
-	// Using this method to update a calendar event with a link to the corresponding assignment.
+	// This method is used to update or insert calendar events. 
 	@Override
 	public void commitEvent(CalendarEventEdit edit) {
 		
-		// Get the pieces that make up the url that links to the assignment.
-		String assignmentId = edit.getField(AssignmentConstants.NEW_ASSIGNMENT_DUEDATE_CALENDAR_ASSIGNMENT_ID);
-		String portal = m_serverConfigurationService.getPortalUrl();
+		Event gEvent = null;
 		// Get information from the site.
 		Site site = getSite();
-		ToolConfiguration toolConfig = site.getToolForCommonId("sakai.assignment.grades");
+
+		// Get the pieces that make up the url that links to the assignment.
+		String assignmentId = edit.getField(AssignmentConstants.NEW_ASSIGNMENT_DUEDATE_CALENDAR_ASSIGNMENT_ID);
 		
-		// Build the link url. We provide both the assignment reference and the assignment id as both are
-		// used in the AssignmentAction class.
-		StringBuilder assignmentLink = new StringBuilder().append(portal)
-			.append("/directtool/").append(toolConfig.getId()).append("?assignmentReference=")
-			.append("/assignment/a/").append(toolConfig.getSiteId()).append("/")
-			.append(assignmentId)
-			.append("&assignmentId=")
-			.append(assignmentId)
-			.append("&panel=Main&sakai_action=doCheck_view");
+		// If we have an assignment id we are just updating the calendar event with a link. Otherwise
+		// we are inserting a new event into the calendar.
+		if (assignmentId != null){
+			String portal = m_serverConfigurationService.getPortalUrl();
+			ToolConfiguration toolConfig = site.getToolForCommonId("sakai.assignment.grades");
+			
+			// Build the link url. We provide both the assignment reference and the assignment id as both are
+			// used in the AssignmentAction class.
+			StringBuilder assignmentLink = new StringBuilder().append(portal)
+				.append("/directtool/").append(toolConfig.getId()).append("?assignmentReference=")
+				.append("/assignment/a/").append(toolConfig.getSiteId()).append("/")
+				.append(assignmentId)
+				.append("&assignmentId=")
+				.append(assignmentId)
+				.append("&panel=Main&sakai_action=doCheck_view");
 
-		// Create a source object to provide a link back to the assignment.
-		Event.Source src = new Event.Source();
-		src.setTitle(calRb.getString("gen.assignmentlink")); // This comes from the sakai calendar resource bundle
-		src.setUrl(assignmentLink.toString());
-
-		Event gEvent = null;
-		try {
-			// Retrieve event and update appropriate field with link to assignment.
-			gEvent = getGoogleCalendarEvent(edit.getId());
-			if (gEvent != null){
-				gEvent.setSource(src);
-				gEvent.setDescription(gEvent.getDescription() + " " + calRb.getString("gen.assignmentlink") + ": " + assignmentLink.toString());
-				client.events().update(site.getProperties().getProperty(SakaiGCalendarServiceStaticVariables.GCALID), gEvent.getId(), gEvent).execute();
+			try {
+				// Retrieve event and update appropriate field with link to assignment.
+				gEvent = getGoogleCalendarEvent(edit.getId());
+				if (gEvent != null){
+					gEvent.setDescription(gEvent.getDescription() + " " + calRb.getString("gen.assignmentlink") + ": " + assignmentLink.toString());
+					client.events().update(site.getProperties().getProperty(SakaiGCalendarServiceStaticVariables.GCALID), gEvent.getId(), gEvent).execute();
+				}
+			} catch (IdUnusedException e) {
+				M_log.error("Cound not find event in Google calendar " + e.getMessage());
+			} catch (IOException e) {
+				M_log.error("Problem updating Google calendar event " + e.getMessage());
 			}
-		} catch (IdUnusedException e) {
-			M_log.error("Cound not find event in Google calendar " + e.getMessage());
-		} catch (IOException e) {
-			M_log.error("Problem updating Google calendar event " + e.getMessage());
+		}
+		else{
+			try {
+				// Initialize a GCal event and populate it with data to insert into the calendar.
+				gEvent = new Event();
+				gEvent.setLocation(edit.getLocation());
+				gEvent.setDescription(edit.getDescription());
+				gEvent.setSummary(edit.getDisplayName());
+				handleEventTimeDetails(edit.getRange(), gEvent);
+				// Call Google calendar API to insert event
+				Event createdEvent = client.events().insert(site.getProperties().getProperty(SakaiGCalendarServiceStaticVariables.GCALID), gEvent).execute();
+				M_log.debug("Google Calendar Event Created:  " + createdEvent.getId());
+				// Add the event id to the edit parameter so it is available to the calling class.
+				SakaiGCalendarEventImpl sakaiEvent = (SakaiGCalendarEventImpl)edit;
+				sakaiEvent.setId(createdEvent.getId());
+				} 
+			catch (IOException e) {
+				M_log.error("Problem updating Google calendar event " + e.getMessage());
+			}
 		}
 	}
 	
@@ -542,6 +560,13 @@ public class SakaiGCalendarImpl implements Calendar {
 		event.setLocation(location);
 		
 		// Handle event time details
+		handleEventTimeDetails(range, event);
+		
+		return event;
+	}
+
+	// Populate Google Calendar event with start and end times from Sakai TimeRange
+	private void handleEventTimeDetails(TimeRange range, Event event) {
 		Time startTime = range.firstTime();
 		Date startDate = new Date(startTime.getTime());
 		Time endTime = range.lastTime();
@@ -550,9 +575,8 @@ public class SakaiGCalendarImpl implements Calendar {
 		event.setStart(new EventDateTime().setDateTime(start));
 		DateTime end = new DateTime(endDate);
 		event.setEnd(new EventDateTime().setDateTime(end));
-		
-		return event;
 	}
+	
 	@Override
 	public String getUrl() {
 		// This method is not supported.
