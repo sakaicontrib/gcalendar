@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Stack;
 
@@ -24,6 +25,7 @@ import org.sakaiproject.exception.InUseException;
 import org.sakaiproject.exception.PermissionException;
 import org.sakaiproject.gcalendar.api.SakaiGCalendarServiceStaticVariables;
 import org.sakaiproject.javax.Filter;
+import org.sakaiproject.site.api.Group;
 import org.sakaiproject.site.api.Site;
 import org.sakaiproject.site.api.SiteService;
 import org.sakaiproject.site.api.ToolConfiguration;
@@ -547,19 +549,28 @@ public class SakaiGCalendarImpl implements Calendar {
 		if (access != null){
 			M_log.warn("access parameter is not supported");
 		}
-		if (groups != null){
-			M_log.warn("groups parameter is not supported");
-		}
 		if (attachments != null){
 			M_log.warn("attachments parameter is not supported");
 		}
 		Event event = new Event();
 
-		event.setSummary(displayName);
+		StringBuilder sb = new StringBuilder().append(displayName);
+		// If this event is for multiple groups, append the group name to the event summary.
+		if (groups != null){
+			Group group = null;
+			for (Iterator iterator = groups.iterator(); iterator.hasNext();) {
+		        group = (Group) iterator.next();
+		        sb.append(" [");
+		        sb.append(group.getTitle());
+		        sb.append("]");
+		    }		
+		}
+		
+		event.setSummary(sb.toString());
 		event.setDescription(description);
 		event.setLocation(location);
 		
-		// Handle event time details
+		// Handle event start/end time details
 		handleEventTimeDetails(range, event);
 		
 		return event;

@@ -52,6 +52,20 @@ getGoogleCalendar = function(accesstoken, gcalid) {
             right : 'month,agendaWeek,agendaDay'
         },
 
+		eventRender: function(event, element) {	
+			$(element).attr('title', event.title);	// Provide a tool tip for the event title.
+			
+        	// Event titles can be long in month view so we truncate the text and provide the complete text
+        	// through the tool tip.
+			var title = element.find('.fc-event-title');
+        	var view = $('#calendar').fullCalendar('getView');
+        	if (title.text().length > 60 && view.name == 'month'){
+        		var more = " <span style='background-color:#B4009E;'>(more...)</span>";
+        		title.text(title.text().substr(0,60)); // Truncate the title text.
+        		title.append(more);	// Add indicator that there is more text available if user mouses over.
+        	}
+		},
+
         // get all the events in the given time range from google calendar
         events : function(start, end, callback) { 
         	refreshCalendarItems( start, end, callback );
