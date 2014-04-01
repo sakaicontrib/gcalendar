@@ -598,6 +598,18 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 	public String getToolId(){
 		return "sakai.gcalendar";		
 	}
+	// Returns true if the Google calendar has been created in Google. Currently the GCalendar tool can be
+	// added to a site but the calendar won't be created in Google until the site owner actually uses the tool.
+	public boolean isCalendarToolInitialized(String siteId){
+		Site site = getSite(siteId);
+		if (getGoogleCalendarID(site) != null){
+			return true;
+		}
+		else{
+			return false;
+		}
+	}
+	
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -809,6 +821,17 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 	// Retrieve site information
 	private Site getSite(){
 		String siteId = ToolManager.getCurrentPlacement().getContext();
+		Site site = null;
+		try {
+			site = this.m_siteService.getSite(siteId);
+		} catch (IdUnusedException e) {
+			M_log.error("Error retrieving site information: " + e.getMessage());
+		}
+		return site;
+	}
+	
+	// Retrieve site given a site id.
+	private Site getSite(String siteId){
 		Site site = null;
 		try {
 			site = this.m_siteService.getSite(siteId);
