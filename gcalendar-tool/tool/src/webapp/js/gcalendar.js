@@ -26,6 +26,8 @@ var eventTimeTextArray = ["12:00am", "12:30am", "1:00am", "1:30am", "2:00am", "2
                           "12:00pm", "12:30pm", "1:00pm", "1:30pm", "2:00pm", "2:30pm", "3:00pm", "3:30pm", "4:00pm", "4:30pm", "5:00pm", "5:30pm", 
                           "6:00pm", "6:30pm", "7:00pm", "7:30pm", "8:00pm", "8:30pm", "9:00pm", "9:30pm", "10:00pm", "10:30pm", "11:00pm", "11:30pm"];
 
+var EVENT_TITLE_MAX_SIZE = 60;
+
 getGoogleCalendar = function(accesstoken, gcalid) {
 	// viewDetailsAllowed is a String
 	editable = true;
@@ -59,9 +61,9 @@ getGoogleCalendar = function(accesstoken, gcalid) {
         	// through the tool tip.
 			var title = element.find('.fc-event-title');
         	var view = $('#calendar').fullCalendar('getView');
-        	if (title.text().length > 60 && view.name == 'month'){
-        		var more = " <span style='background-color:#B4009E;'>(more...)</span>";
-        		title.text(title.text().substr(0,60)); // Truncate the title text.
+        	if (title.text().length > EVENT_TITLE_MAX_SIZE && view.name == 'month'){
+        		var more = "<span class='moreInfo'>&nbsp;(more...)</span>";
+        		title.text(title.text().substr(0,EVENT_TITLE_MAX_SIZE)); // Truncate the title text.
         		title.append(more);	// Add indicator that there is more text available if user mouses over.
         	}
 		},

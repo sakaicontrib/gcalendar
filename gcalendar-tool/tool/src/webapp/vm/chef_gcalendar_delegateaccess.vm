@@ -6,6 +6,7 @@
 
 <link rel='stylesheet' type='text/css' href='/sakai-gcalendar-tool/js/timepicker/lib/base.css'/> ## Used in Timepicker style
 <link rel='stylesheet' type='text/css' href='/sakai-gcalendar-tool/js/timepicker/jquery.timepicker.css'/> ## Timepicker style
+<link rel='stylesheet' type='text/css' href='/sakai-gcalendar-tool/css/gcalendar.css'/> ## Any custom style to use with gcal
 
 <script type='text/javascript' src='/library/fullcalendar/js/jquery/1.7.1/jquery-1.7.1.min.js'></script> ## handles eventclick
 <script type='text/javascript' src='/library/js/jquery/ui/1.8.4/jquery-ui-1.8.4.full.min.js'></script> ## for dayClick
