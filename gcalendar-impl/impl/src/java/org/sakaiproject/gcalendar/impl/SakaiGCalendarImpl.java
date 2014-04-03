@@ -25,6 +25,7 @@ import org.sakaiproject.exception.InUseException;
 import org.sakaiproject.exception.PermissionException;
 import org.sakaiproject.gcalendar.api.SakaiGCalendarServiceStaticVariables;
 import org.sakaiproject.javax.Filter;
+import org.sakaiproject.shortenedurl.api.ShortenedUrlService;
 import org.sakaiproject.site.api.Group;
 import org.sakaiproject.site.api.Site;
 import org.sakaiproject.site.api.SiteService;
@@ -339,11 +340,19 @@ public class SakaiGCalendarImpl implements Calendar {
 				.append(assignmentId)
 				.append("&panel=Main&sakai_action=doCheck_view");
 
+			// Get the URL shortening service from the component manager.
+			ShortenedUrlService urlSvc = (ShortenedUrlService)ComponentManager.get("org.sakaiproject.shortenedurl.api.ShortenedUrlService");
+			String shortUrl = null;
+			if (urlSvc != null){
+				// Shorten the URL link to the assignment.
+				shortUrl = urlSvc.shorten(assignmentLink.toString(), true);
+			}
+			
 			try {
 				// Retrieve event and update appropriate field with link to assignment.
 				gEvent = getGoogleCalendarEvent(edit.getId());
 				if (gEvent != null){
-					gEvent.setDescription(gEvent.getDescription() + " " + calRb.getString("gen.assignmentlink") + ": " + assignmentLink.toString());
+					gEvent.setDescription(gEvent.getDescription() + " " + System.getProperty("line.separator") + calRb.getString("gen.assignmentlink") + ": " + shortUrl);
 					client.events().update(site.getProperties().getProperty(SakaiGCalendarServiceStaticVariables.GCALID), gEvent.getId(), gEvent).execute();
 				}
 			} catch (IdUnusedException e) {
