@@ -57,14 +57,16 @@ public class SakaiGCalendarImpl implements Calendar {
 	protected SiteService m_siteService = (SiteService)ComponentManager.get(SiteService.class.getName());
 
 	/** Dependency: SecurityService. */
-	protected SecurityService securityService = (SecurityService)ComponentManager.get(SecurityService.class.getName());;
+	protected SecurityService securityService = (SecurityService)ComponentManager.get(SecurityService.class.getName());
 	
 	/** Client used to invoke the Google API's */
 	private com.google.api.services.calendar.Calendar client;
 	
+	/** Get the URL shortening service from the component manager.*/
+	private ShortenedUrlService urlSvc = (ShortenedUrlService)ComponentManager.get(ShortenedUrlService.class.getName());
+
 	/** Load Resource bundle using current language locale */
-	// Note: this is the resource bundle from the sakai schedule tool, not the gcalendar rb.
-	private static ResourceLoader calRb = new ResourceLoader("calendar");
+	private static ResourceLoader rb = new ResourceLoader("gcalendar");
 	
 	public SakaiGCalendarImpl(com.google.api.services.calendar.Calendar client){
 		this.client = client;
@@ -321,38 +323,21 @@ public class SakaiGCalendarImpl implements Calendar {
 		// Get information from the site.
 		Site site = getSite();
 
-		// Get the pieces that make up the url that links to the assignment.
+		// Get the assignment id associated with the event.
 		String assignmentId = edit.getField(AssignmentConstants.NEW_ASSIGNMENT_DUEDATE_CALENDAR_ASSIGNMENT_ID);
 		
 		// If we have an assignment id we are just updating the calendar event with a link. Otherwise
 		// we are inserting a new event into the calendar.
 		if (assignmentId != null){
-			String portal = m_serverConfigurationService.getPortalUrl();
-			ToolConfiguration toolConfig = site.getToolForCommonId("sakai.assignment.grades");
-			
-			// Build the link url. We provide both the assignment reference and the assignment id as both are
-			// used in the AssignmentAction class.
-			StringBuilder assignmentLink = new StringBuilder().append(portal)
-				.append("/directtool/").append(toolConfig.getId()).append("?assignmentReference=")
-				.append("/assignment/a/").append(toolConfig.getSiteId()).append("/")
-				.append(assignmentId)
-				.append("&assignmentId=")
-				.append(assignmentId)
-				.append("&panel=Main&sakai_action=doCheck_view");
-
-			// Get the URL shortening service from the component manager.
-			ShortenedUrlService urlSvc = (ShortenedUrlService)ComponentManager.get("org.sakaiproject.shortenedurl.api.ShortenedUrlService");
-			String shortUrl = null;
-			if (urlSvc != null){
-				// Shorten the URL link to the assignment.
-				shortUrl = urlSvc.shorten(assignmentLink.toString(), true);
-			}
+			// Create the URL to point back to the Assignment associated with this event.
+			String assignmentUrl = generateAssignmentUrl(site, assignmentId);
 			
 			try {
-				// Retrieve event and update appropriate field with link to assignment.
+				// Retrieve event and update the description field with link to assignment.
 				gEvent = getGoogleCalendarEvent(edit.getId());
 				if (gEvent != null){
-					gEvent.setDescription(gEvent.getDescription() + " " + System.getProperty("line.separator") + calRb.getString("gen.assignmentlink") + ": " + shortUrl);
+					String evtDesc = rb.getFormattedMessage("gcal.assignment.link", new Object[]{gEvent.getDescription(), assignmentUrl});
+					gEvent.setDescription(evtDesc);
 					client.events().update(site.getProperties().getProperty(SakaiGCalendarServiceStaticVariables.GCALID), gEvent.getId(), gEvent).execute();
 				}
 			} catch (IdUnusedException e) {
@@ -364,11 +349,7 @@ public class SakaiGCalendarImpl implements Calendar {
 		else{
 			try {
 				// Initialize a GCal event and populate it with data to insert into the calendar.
-				gEvent = new Event();
-				gEvent.setLocation(edit.getLocation());
-				gEvent.setDescription(edit.getDescription());
-				gEvent.setSummary(edit.getDisplayName());
-				handleEventTimeDetails(edit.getRange(), gEvent);
+				gEvent = createGoogleCalendarEvent(edit.getRange(), edit.getDisplayName(),edit.getDescription(), null, edit.getLocation(), null, null, null);
 				// Call Google calendar API to insert event
 				Event createdEvent = client.events().insert(site.getProperties().getProperty(SakaiGCalendarServiceStaticVariables.GCALID), gEvent).execute();
 				M_log.debug("Google Calendar Event Created:  " + createdEvent.getId());
@@ -379,6 +360,42 @@ public class SakaiGCalendarImpl implements Calendar {
 			catch (IOException e) {
 				M_log.error("Problem updating Google calendar event " + e.getMessage());
 			}
+		}
+	}
+	
+	/**
+	 * Build a URL that points to the Assignment provided.
+	 * @param site
+	 * @param assignmentId
+	 * @return
+	 */
+	private String generateAssignmentUrl(Site site, String assignmentId){
+		
+		String generatedUrl = null;
+		
+		String portal = m_serverConfigurationService.getPortalUrl();
+		ToolConfiguration toolConfig = site.getToolForCommonId("sakai.assignment.grades");
+		
+		// Build the link url. We provide both the assignment reference and the assignment id as both are
+		// used in the AssignmentAction class.
+		StringBuilder assignmentLink = new StringBuilder().append(portal)
+			.append("/directtool/").append(toolConfig.getId()).append("?assignmentReference=")
+			.append("/assignment/a/").append(toolConfig.getSiteId()).append("/")
+			.append(assignmentId)
+			.append("&assignmentId=")
+			.append(assignmentId)
+			.append("&panel=Main&sakai_action=doCheck_view");
+
+		if (urlSvc != null){
+			// Use URL shortening service to shorten the URL link to the assignment.
+			generatedUrl = urlSvc.shorten(assignmentLink.toString(), true);
+		}
+		// If the URL shortening was successful, we return the short URL. Otherwise we return the original long URL.
+		if (generatedUrl != null){
+			return generatedUrl;
+		}
+		else {
+			return assignmentLink.toString();
 		}
 	}
 	

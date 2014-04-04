@@ -4,8 +4,8 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
-		<artifactId>gcalendar-base</artifactId>
 		<groupId>org.sakaiproject</groupId>
+		<artifactId>gcalendar-base</artifactId>
 		<version>10-SNAPSHOT</version>
 		<relativePath>../../pom.xml</relativePath>
 	</parent>
@@ -13,7 +13,6 @@
 	<name>sakai-gcalendar-impl</name>
 	<groupId>org.sakaiproject.gcalendar</groupId>
 	<artifactId>sakai-gcalendar-impl</artifactId>
-	<version>10-SNAPSHOT</version>
 	<organization>
 		<name>University of Michigan</name>
 		<url>http://sakaiproject.org/</url>
@@ -86,16 +85,19 @@
 			<artifactId>google-http-client-jackson2</artifactId>
 			<version>1.17.0-rc</version>
 		</dependency>
+		
+		<!-- Gcalendar Resource Bundles -->
+		<dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>sakai-gcalendar-bundles</artifactId>
+            <version>${project.version}</version>
+        </dependency>        
+		
 		<!--  Calendar dependencies -->
         <dependency>
             <groupId>org.sakaiproject.calendar</groupId>
             <artifactId>sakai-calendar-api</artifactId>
         </dependency>        
-        <dependency>
-            <groupId>org.sakaiproject.calendar</groupId>
-            <artifactId>sakai-calendar-bundles</artifactId>
-            <version>10-SNAPSHOT</version>
-        </dependency>
         
         <!-- Assignment dependency -->
         <dependency>

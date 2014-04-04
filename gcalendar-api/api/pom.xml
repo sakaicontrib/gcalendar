@@ -2,9 +2,9 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <parent>
-    <artifactId>gcalendar-base</artifactId>
+  <parent>
     <groupId>org.sakaiproject</groupId>
+    <artifactId>gcalendar-base</artifactId>
     <version>10-SNAPSHOT</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
@@ -12,7 +12,6 @@
     <name>sakai-gcalendar-api</name>
     <groupId>org.sakaiproject.gcalendar</groupId>
     <artifactId>sakai-gcalendar-api</artifactId>
-  <version>10-SNAPSHOT</version>
     <organization>
         <name>The Sakai Foundation</name>
         <url>http://sakaiproject.org/</url>
