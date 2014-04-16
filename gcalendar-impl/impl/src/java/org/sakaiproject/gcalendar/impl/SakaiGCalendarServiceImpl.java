@@ -861,7 +861,13 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 	@Override
 	public org.sakaiproject.calendar.api.Calendar getCalendar(String ref)
 			throws IdUnusedException, PermissionException {
-		Site site = getSite();
+		Site site = null;
+		if (ref == null){
+			site = getSite();
+		}
+		else{
+			site = getSite(ref);
+		}
 		// We use the e-mail id of the site creator since the Google calendar is created under this id.
 		Calendar googleClient = getGoogleClient(site.getCreatedBy().getEmail());
 		return new SakaiGCalendarImpl(googleClient);
