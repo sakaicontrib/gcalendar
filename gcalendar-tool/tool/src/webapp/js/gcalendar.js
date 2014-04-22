@@ -27,6 +27,9 @@ var eventTimeTextArray = ["12:00am", "12:30am", "1:00am", "1:30am", "2:00am", "2
                           "6:00pm", "6:30pm", "7:00pm", "7:30pm", "8:00pm", "8:30pm", "9:00pm", "9:30pm", "10:00pm", "10:30pm", "11:00pm", "11:30pm"];
 
 var EVENT_TITLE_MAX_SIZE = 60;
+// Variable to manage the Google event pop-up window.
+var gCalPopUpHandle; // Handle to GCal pop-up window.
+var intervalHandle; // Handle to timer service that checks if pop-up has closed.
 
 getGoogleCalendar = function(accesstoken, gcalid) {
 	// viewDetailsAllowed is a String
@@ -205,7 +208,12 @@ getGoogleCalendar = function(accesstoken, gcalid) {
             	return false;
         	
             // opens events in a popup window
-            window.open(event.url, 'gcalevent', 'width=700, height=600');
+        	gCalPopUpHandle = window.open(event.url, 'gcalevent', 'width=700, height=600');
+        	// If user can update events, we monitor for the Google window closing so we can refresh
+        	// the page and display any updates made to the event.
+        	if (createEventsAllowed == "true"){
+        		intervalHandle = setInterval(checkIfPopUpIsClosed, 100);
+        	}
             return false;
         },
 
@@ -531,6 +539,14 @@ findFullCalendarEvent = function( event ) {
 	}
 	return -1; // did not find it
 };
+
+// Check if user has closed the Google calendar pop-up window and refresh display
+function checkIfPopUpIsClosed() {
+	if (gCalPopUpHandle != null && createEventsAllowed == "true" && gCalPopUpHandle.closed) {
+		clearInterval(intervalHandle); // Clear timer service.
+		$('#calendar').fullCalendar( 'refetchEvents' ); // Refetch events to show any updates.
+	}
+}
 
 // refresh calendar items
 refreshCalendarItems = function( start, end, callback ) {

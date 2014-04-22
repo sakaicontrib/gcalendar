@@ -54,6 +54,14 @@
 	
 	$(document).ready(function() {
 	
+		// Show spinner whenever async actvity takes place
+		$(document).ajaxStart(function(){
+			$('#spinner').show();
+		});
+		$(document).ajaxStop(function(){
+			$('#spinner').hide();
+		});
+	
 		getGoogleCalendar(accesstoken, gcalid);
 		
 	});
@@ -109,6 +117,5 @@
 </div>
 
 <p>$tlang.getString("gcal.shareCalendar")<a href="$googlelink" target="_blank"> $googlelink</a></p>
-
+<div id='spinner'></div>
 </body>
-</div>

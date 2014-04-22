@@ -10,6 +10,7 @@ gcalendar-impl/impl/src/java/org/sakaiproject/gcalendar/impl/SakaiGCalendarImpl.
 gcalendar-impl/impl/src/java/org/sakaiproject/gcalendar/impl/SakaiGCalendarServiceImpl.java -text
 gcalendar-tool/tool/src/java/org/sakaiproject/gcalendar/tool/GCalendarAction.java -text svn_keywords=Date+Revision+Author+HeadURL+Id
 gcalendar-tool/tool/src/webapp/css/gcalendar.css -text
+gcalendar-tool/tool/src/webapp/images/ajax_loader_blue_128.gif -text
 gcalendar-tool/tool/src/webapp/js/gcalendar.js -text
 gcalendar-tool/tool/src/webapp/js/timepicker/jquery.timepicker.css -text
 gcalendar-tool/tool/src/webapp/js/timepicker/jquery.timepicker.min.js -text
