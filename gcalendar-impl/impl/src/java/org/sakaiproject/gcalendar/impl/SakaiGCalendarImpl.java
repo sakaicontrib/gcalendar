@@ -349,7 +349,7 @@ public class SakaiGCalendarImpl implements Calendar {
 		else{
 			try {
 				// Initialize a GCal event and populate it with data to insert into the calendar.
-				gEvent = createGoogleCalendarEvent(edit.getRange(), edit.getDisplayName(),edit.getDescription(), null, edit.getLocation(), null, null, null);
+				gEvent = createGoogleCalendarEvent(edit.getRange(), edit.getDisplayName(),edit.getDescription(), null, edit.getLocation(), null, edit.getGroups(), null);
 				// Call Google calendar API to insert event
 				Event createdEvent = client.events().insert(site.getProperties().getProperty(SakaiGCalendarServiceStaticVariables.GCALID), gEvent).execute();
 				M_log.debug("Google Calendar Event Created:  " + createdEvent.getId());

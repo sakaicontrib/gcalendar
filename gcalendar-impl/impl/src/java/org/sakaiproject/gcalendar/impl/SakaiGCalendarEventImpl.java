@@ -46,6 +46,7 @@ public class SakaiGCalendarEventImpl implements CalendarEventEdit{
 	private String displayName;
 	private String location;
 	private Map<String,String> fieldName = new HashMap<String,String>();
+	private Collection groups;
 
 	@Override
 	public String getUrl() {
@@ -182,8 +183,7 @@ public class SakaiGCalendarEventImpl implements CalendarEventEdit{
 
 	@Override
 	public Collection getGroups() {
-		// TODO Auto-generated method stub
-		return null;
+		return groups;
 	}
 
 	@Override
@@ -295,7 +295,7 @@ public class SakaiGCalendarEventImpl implements CalendarEventEdit{
 	@Override
 	public void setGroupAccess(Collection groups, boolean own)
 			throws PermissionException {
-		// TODO Auto-generated method stub
+		this.groups = groups;
 		
 	}
 
