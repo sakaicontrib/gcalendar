@@ -326,8 +326,7 @@ public class SakaiGCalendarImpl implements Calendar {
 		// Get the assignment id associated with the event.
 		String assignmentId = edit.getField(AssignmentConstants.NEW_ASSIGNMENT_DUEDATE_CALENDAR_ASSIGNMENT_ID);
 		
-		// If we have an assignment id we are just updating the calendar event with a link. Otherwise
-		// we are inserting a new event into the calendar.
+		// If we have an assignment id we are just updating the calendar event with a link. 
 		if (assignmentId != null){
 			// Create the URL to point back to the Assignment associated with this event.
 			String assignmentUrl = generateAssignmentUrl(site, assignmentId);
@@ -347,18 +346,31 @@ public class SakaiGCalendarImpl implements Calendar {
 			}
 		}
 		else{
-			try {
+			if (edit.getId() == null){ // It is a new event
 				// Initialize a GCal event and populate it with data to insert into the calendar.
 				gEvent = createGoogleCalendarEvent(edit.getRange(), edit.getDisplayName(),edit.getDescription(), null, edit.getLocation(), null, edit.getGroups(), null);
 				// Call Google calendar API to insert event
-				Event createdEvent = client.events().insert(site.getProperties().getProperty(SakaiGCalendarServiceStaticVariables.GCALID), gEvent).execute();
-				M_log.debug("Google Calendar Event Created:  " + createdEvent.getId());
+				Event createdEvent = null;
+				try {
+					createdEvent = client.events().insert(site.getProperties().getProperty(SakaiGCalendarServiceStaticVariables.GCALID), gEvent).execute();
+					M_log.debug("Google Calendar Event Created:  " + createdEvent.getId());
+				} catch (IOException e) {
+					M_log.error("Problem inserting Google calendar event " + e.getMessage());
+				}
+				
 				// Add the event id to the edit parameter so it is available to the calling class.
 				SakaiGCalendarEventImpl sakaiEvent = (SakaiGCalendarEventImpl)edit;
 				sakaiEvent.setId(createdEvent.getId());
-				} 
-			catch (IOException e) {
-				M_log.error("Problem updating Google calendar event " + e.getMessage());
+			}
+			else{
+				// Update existing event.
+				gEvent = updateEventValues(edit);
+				try {
+					client.events().update(site.getProperties().getProperty(SakaiGCalendarServiceStaticVariables.GCALID), gEvent.getId(), gEvent).execute();
+					M_log.debug("Google Calendar Event Successfully updated:  " + edit.getId());
+				} catch (IOException e) {
+					M_log.error("Problem updating Google calendar event " + e.getMessage());
+				}
 			}
 		}
 	}
@@ -580,6 +592,20 @@ public class SakaiGCalendarImpl implements Calendar {
 		}
 		Event event = new Event();
 
+		StringBuilder sb = buildEventDisplayName(displayName, groups);
+		
+		event.setSummary(sb.toString());
+		event.setDescription(description);
+		event.setLocation(location);
+		
+		// Handle event start/end time details
+		handleEventTimeDetails(range, event);
+		
+		return event;
+	}
+
+	private StringBuilder buildEventDisplayName(String displayName,
+			Collection groups) {
 		StringBuilder sb = new StringBuilder().append(displayName);
 		// If this event is for multiple groups, append the group name to the event summary.
 		if (groups != null){
@@ -591,15 +617,7 @@ public class SakaiGCalendarImpl implements Calendar {
 		        sb.append("]");
 		    }		
 		}
-		
-		event.setSummary(sb.toString());
-		event.setDescription(description);
-		event.setLocation(location);
-		
-		// Handle event start/end time details
-		handleEventTimeDetails(range, event);
-		
-		return event;
+		return sb;
 	}
 
 	// Populate Google Calendar event with start and end times from Sakai TimeRange
@@ -612,6 +630,34 @@ public class SakaiGCalendarImpl implements Calendar {
 		event.setStart(new EventDateTime().setDateTime(start));
 		DateTime end = new DateTime(endDate);
 		event.setEnd(new EventDateTime().setDateTime(end));
+	}
+	
+	/**
+	 * Updates Google calendar event with new values
+	 * @param modifiedEvent
+	 * @return
+	 */
+	private Event updateEventValues(CalendarEventEdit modifiedEvent){
+		// Retrieve event
+		Event originalEvent = null;
+		try {
+			originalEvent = getGoogleCalendarEvent(modifiedEvent.getId());
+		} catch (IdUnusedException e) {
+			M_log.error("Problem retrieving event for update. " + e.getMessage() );
+		}
+		// Update original event with new values
+		if (modifiedEvent.getGroups() == null){
+			originalEvent.setSummary(modifiedEvent.getDisplayName());
+		}
+		else{
+			StringBuilder sb = buildEventDisplayName(modifiedEvent.getDisplayName(), modifiedEvent.getGroups());
+			originalEvent.setSummary(sb.toString());
+		}
+		originalEvent.setDescription(modifiedEvent.getDescription());
+		originalEvent.setLocation(modifiedEvent.getLocation());
+		handleEventTimeDetails(modifiedEvent.getRange(), originalEvent);
+		
+		return originalEvent;
 	}
 	
 	@Override
