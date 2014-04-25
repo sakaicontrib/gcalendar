@@ -31,6 +31,16 @@ var EVENT_TITLE_MAX_SIZE = 60;
 var gCalPopUpHandle; // Handle to GCal pop-up window.
 var intervalHandle; // Handle to timer service that checks if pop-up has closed.
 
+// Show spinner whenever async activity takes place
+$(document).ready(function() {
+	$(document).ajaxStart(function(){
+		$('#spinner').show();
+	});
+	$(document).ajaxStop(function(){
+		$('#spinner').hide();
+	});
+});
+
 getGoogleCalendar = function(accesstoken, gcalid) {
 	// viewDetailsAllowed is a String
 	editable = true;
@@ -208,11 +218,13 @@ getGoogleCalendar = function(accesstoken, gcalid) {
             	return false;
         	
             // opens events in a popup window
-        	gCalPopUpHandle = window.open(event.url, 'gcalevent', 'width=700, height=600');
+    		gCalPopUpHandle = window.open(event.url, 'gcalevent', 'width=700, height=600');
+    		clearInterval(intervalHandle);	// If user re-clicks the event link.
+    		gCalPopUpHandle.focus();	// If user re-clicks the event link.
         	// If user can update events, we monitor for the Google window closing so we can refresh
         	// the page and display any updates made to the event.
         	if (createEventsAllowed == "true"){
-        		intervalHandle = setInterval(checkIfPopUpIsClosed, 100);
+        		intervalHandle = setInterval(checkIfPopUpIsClosed, 200); // Check 5 times a second
         	}
             return false;
         },

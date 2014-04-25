@@ -54,14 +54,6 @@
 	
 	$(document).ready(function() {
 	
-		// Show spinner whenever async actvity takes place
-		$(document).ajaxStart(function(){
-			$('#spinner').show();
-		});
-		$(document).ajaxStop(function(){
-			$('#spinner').hide();
-		});
-	
 		getGoogleCalendar(accesstoken, gcalid);
 		
 	});
