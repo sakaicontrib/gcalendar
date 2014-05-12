@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
-		<groupId>org.sakaiproject</groupId>
+		<groupId>org.sakaiproject.gcalendar</groupId>
 		<artifactId>gcalendar-base</artifactId>
 		<version>10-SNAPSHOT</version>
 		<relativePath>../../pom.xml</relativePath>
@@ -109,7 +109,7 @@
         <dependency>
             <groupId>org.sakaiproject.shortenedurl</groupId>
             <artifactId>shortenedurl-api</artifactId>
-            <version>10-SNAPSHOT</version>
+            <version>11-SNAPSHOT</version>
         </dependency>        
 		
 	</dependencies>
