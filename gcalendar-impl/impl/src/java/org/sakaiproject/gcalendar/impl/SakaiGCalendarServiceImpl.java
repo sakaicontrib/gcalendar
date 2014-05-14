@@ -1,50 +1,39 @@
-/**********************************************************************************
- * $URL: https://source.sakaiproject.org/contrib/umich/gcalendar/gcalendar-api/api/src/java/org/sakaiproject/gcalendar/impl/SakaiGCalendarServiceImpl.java $
- * $Id: SakaiGCalendarServiceImpl.java 82630 2013-02-07 14:15:50Z wanghlxr@umich.edu $
- ***********************************************************************************
- *
- * Copyright (c) 2013 The Sakai Foundation
- *
- * Licensed under the Educational Community License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *       http://www.opensource.org/licenses/ECL-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- **********************************************************************************/
-
+/*
+* Licensed to The Apereo Foundation under one or more contributor license
+* agreements. See the NOTICE file distributed with this work for
+* additional information regarding copyright ownership.
+*
+* The Apereo Foundation licenses this file to you under the Educational 
+* Community License, Version 2.0 (the "License"); you may not use this file 
+* except in compliance with the License. You may obtain a copy of the 
+* License at:
+*
+* http://opensource.org/licenses/ecl2.txt
+* 
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
 package org.sakaiproject.gcalendar.impl;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
-import java.util.TimeZone;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.sakaiproject.assignment.api.AssignmentConstants;
 import org.sakaiproject.authz.api.FunctionManager;
 import org.sakaiproject.authz.api.SecurityService;
 import org.sakaiproject.calendar.api.CalendarEdit;
-import org.sakaiproject.calendar.api.CalendarEvent;
-import org.sakaiproject.calendar.api.CalendarEvent.EventAccess;
-import org.sakaiproject.calendar.api.CalendarEventEdit;
 import org.sakaiproject.calendar.api.CalendarEventVector;
-import org.sakaiproject.calendar.api.CalendarService;
 import org.sakaiproject.calendar.api.RecurrenceRule;
 import org.sakaiproject.component.api.ServerConfigurationService;
-import org.sakaiproject.component.cover.ComponentManager;
 import org.sakaiproject.entity.api.ContextObserver;
 import org.sakaiproject.entity.api.Entity;
 import org.sakaiproject.entity.api.EntityManager;
@@ -60,10 +49,10 @@ import org.sakaiproject.exception.PermissionException;
 import org.sakaiproject.gcalendar.api.SakaiGCalendarService;
 import org.sakaiproject.google.impl.SakaiGoogleAuthServiceImpl;
 import org.sakaiproject.gcalendar.api.SakaiGCalendarServiceStaticVariables;
-import org.sakaiproject.javax.Filter;
+import org.sakaiproject.memory.api.Cache;
+import org.sakaiproject.memory.api.MemoryService;
 import org.sakaiproject.site.api.Site;
 import org.sakaiproject.site.api.SiteService;
-import org.sakaiproject.site.api.ToolConfiguration;
 import org.sakaiproject.user.api.Preferences;
 import org.sakaiproject.user.api.PreferencesEdit;
 import org.sakaiproject.user.api.PreferencesService;
@@ -81,15 +70,11 @@ import com.google.api.client.http.HttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
-import com.google.api.client.util.DateTime;
 import com.google.api.client.util.Lists;
 import com.google.api.services.calendar.Calendar;
 import com.google.api.services.calendar.CalendarScopes;
 import com.google.api.services.calendar.model.AclRule;
 import com.google.api.services.calendar.model.AclRule.Scope;
-import com.google.api.services.calendar.model.Event;
-import com.google.api.services.calendar.model.EventDateTime;
-import com.google.api.services.calendar.model.Events;
 
 public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, ContextObserver {
 	
@@ -142,8 +127,17 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 	public void setSecurityService(SecurityService securityService) {
 		this.securityService = securityService;
 	}
+	
+	private MemoryService memoryService; // Used to create a cache to store GoogleCredentials
+	public void setMemoryService(MemoryService memoryService) {
+		this.memoryService = memoryService;
+	}
+
+	private Cache cache;  // Initialized in the init() method.
+	private final String CACHE_NAME = "org.sakaiproject.gcalendar.credentials.cache";	
+
 	/** Authorizes the service account to access user's protected data. */
-	private GoogleCredential getGoogleCredential(String userid) {		
+	private GoogleCredential getGoogleCredential(String userId) {		
 		
 		try { 
 			// get the service account e-mail address and service account private key from property file
@@ -154,8 +148,8 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 			if (PRIVATE_KEY == null) {
 				PRIVATE_KEY = m_serverConfigurationService.getString("google.private.key", "");
 			}
-			GoogleCredential credential = SakaiGoogleAuthServiceImpl.authorize(userid, SERVICE_ACCOUNT_EMAIL, PRIVATE_KEY, CalendarScopes.CALENDAR);
 			
+			GoogleCredential credential = getCredentialFromCredentialCache(userId);
 			return credential;
 
 		} catch (Exception e) {
@@ -164,6 +158,32 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 			return null;
 		}
 	}
+	
+	// Check if there is a credential object in the cache for this user. If not in cache we create a new one.
+	private GoogleCredential getCredentialFromCredentialCache(final String userId) throws IOException{
+		GoogleCredential credential = null;
+		if (cache.get(userId) != null){
+			credential = (GoogleCredential)cache.get(userId);
+			M_log.debug("Fetching credential from cache for user: " + userId);
+			return credential;
+		}
+		else{ // Need to create credential and create access token.
+			credential = SakaiGoogleAuthServiceImpl.authorize(userId, SERVICE_ACCOUNT_EMAIL, PRIVATE_KEY, CalendarScopes.CALENDAR);
+			credential.refreshToken(); // Populates credential with access token
+			addCredentialToCache(userId, credential);
+			return credential;
+		}
+	}
+	
+  	/**
+  	 * Add user credential to the cache
+  	 * @param k	key
+  	 * @param v value
+  	 */
+  	private void addCredentialToCache(String k, GoogleCredential v){
+		cache.put(k, v);
+		M_log.debug("Added entry to cache, key: " + k +", value: " + v);
+  	}
 	
 	public boolean isValidGoogleUser( String emailID ) {
 		
@@ -409,13 +429,15 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 		// At this point credential has no Access Token
 		client = getGoogleClient( credential );
 
-		// get the calendar using gcalid stored in the site property from sakai db
-		// This line of code fill in the Access Token - it can not be refactored out
-		try {
-			com.google.api.services.calendar.model.Calendar calendar = client.calendars().get(gcalid).execute();
-		} catch (IOException e) {
-			M_log.error("getGCalendarAccessToken - IOException: " + e.getMessage());
-			return null;
+		if (credential.getAccessToken() == null){
+			// get the calendar using gcalid stored in the site property from sakai db
+			// This line of code fill in the Access Token - it can not be refactored out
+			try {
+				com.google.api.services.calendar.model.Calendar calendar = client.calendars().get(gcalid).execute();
+			} catch (IOException e) {
+				M_log.error("getGCalendarAccessToken - IOException: " + e.getMessage());
+				return null;
+			}
 		}
 		return credential.getAccessToken();
 	}
@@ -788,6 +810,9 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 		functionManager.registerFunction(SakaiGCalendarServiceStaticVariables.SECURE_GCAL_VIEW);
 		functionManager.registerFunction(SakaiGCalendarServiceStaticVariables.SECURE_GCAL_VIEW_ALL);
 		functionManager.registerFunction(SakaiGCalendarServiceStaticVariables.SECURE_GCAL_EDIT);
+		
+  		//setup cache
+  		cache = memoryService.newCache(CACHE_NAME);
 	}
 
 	/**
@@ -841,11 +866,6 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 		return site;
 	}
 	
-	@Override
-	public List getCalendars() {
-		// This method is not supported.
-		return null;
-	}
 	@Override
 	public CalendarEdit addCalendar(String ref) throws IdUsedException,
 			IdInvalidException, PermissionException {
