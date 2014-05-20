@@ -136,7 +136,8 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 	private Cache cache;  // Initialized in the init() method.
 	private final String CACHE_NAME = "org.sakaiproject.gcalendar.credentials.cache";	
 
-	/** Authorizes the service account to access user's protected data. */
+	/** Authorizes the service account to access user's protected data. 
+	 	A null value will be returned if there is a problem */
 	private GoogleCredential getGoogleCredential(String userId) {		
 		
 		try { 
@@ -153,24 +154,25 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 			return credential;
 
 		} catch (Exception e) {
-			// return null if catch exception so we will not create a google calendar
-			M_log.error("getGoogleCredential: " + e.getMessage());
+			// return null if an exception occurs while communicating with Google.
+			M_log.error("Error creating a GoogleCredential object or requesting access token: " + e.getMessage());
 			return null;
 		}
 	}
 	
 	// Check if there is a credential object in the cache for this user. If not in cache we create a new one.
 	private GoogleCredential getCredentialFromCredentialCache(final String userId) throws IOException{
-		GoogleCredential credential = null;
-		if (cache.get(userId) != null){
-			credential = (GoogleCredential)cache.get(userId);
+		GoogleCredential credential = (GoogleCredential)cache.get(userId);
+		if (credential != null){
 			M_log.debug("Fetching credential from cache for user: " + userId);
 			return credential;
 		}
 		else{ // Need to create credential and create access token.
 			credential = SakaiGoogleAuthServiceImpl.authorize(userId, SERVICE_ACCOUNT_EMAIL, PRIVATE_KEY, CalendarScopes.CALENDAR);
-			credential.refreshToken(); // Populates credential with access token
-			addCredentialToCache(userId, credential);
+			if (credential != null){
+				credential.refreshToken(); // Populates credential with access token
+				addCredentialToCache(userId, credential);
+			}
 			return credential;
 		}
 	}
@@ -420,26 +422,13 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 	 */
 	public String getGCalendarAccessToken( String gcalid, String emailID) {
 		
-		Calendar client;
-		
 		GoogleCredential credential = getGoogleCredential(emailID);
 		if (credential == null) {
 			return null; // user not authorized
 		}
-		// At this point credential has no Access Token
-		client = getGoogleClient( credential );
-
-		if (credential.getAccessToken() == null){
-			// get the calendar using gcalid stored in the site property from sakai db
-			// This line of code fill in the Access Token - it can not be refactored out
-			try {
-				com.google.api.services.calendar.model.Calendar calendar = client.calendars().get(gcalid).execute();
-			} catch (IOException e) {
-				M_log.error("getGCalendarAccessToken - IOException: " + e.getMessage());
-				return null;
-			}
+		else{
+			return credential.getAccessToken();
 		}
-		return credential.getAccessToken();
 	}
     
     /**
@@ -811,7 +800,7 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 		functionManager.registerFunction(SakaiGCalendarServiceStaticVariables.SECURE_GCAL_VIEW_ALL);
 		functionManager.registerFunction(SakaiGCalendarServiceStaticVariables.SECURE_GCAL_EDIT);
 		
-  		//setup cache
+  		//Setup cache. This will create a cache using the default configuration used in the memory service.
   		cache = memoryService.newCache(CACHE_NAME);
 	}
 
