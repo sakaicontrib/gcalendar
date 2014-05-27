@@ -31,6 +31,351 @@ var EVENT_TITLE_MAX_SIZE = 60;
 var gCalPopUpHandle; // Handle to GCal pop-up window.
 var intervalHandle; // Handle to timer service that checks if pop-up has closed.
 
+
+// Method to compare two non-allDay events.
+var compare_two_events = function (evt1, evt2) {
+	if (evt1.start.dateTime > evt2.start.dateTime) {return 1;}
+	if (evt1.start.dateTime < evt2.start.dateTime) {return -1;}
+	return 0;
+	};
+	
+// Method to compare two allDay events.
+var compare_two_all_day_events = function (evt1, evt2){
+    if (evt1.start.date > evt2.start.date) {return 1;}
+    if (evt1.start.date < evt2.start.date) {return -1;}
+    return 0;
+};
+
+// Method to compare an allDay event with a non-allDay event.
+var compare_event_with_all_day_event = function(evt1, evt2){
+    if (evt1.start.date){ // evt1 is an allDay event.
+    	if (evt1.start.date > evt2.start.dateTime) return 1;
+    	if (evt1.start.date < evt2.start.dateTime) return -1;
+    	return 0;
+    }
+    else{
+		if (evt1.start.dateTime){ // evt1 is a non-allDay event.
+		    if (evt1.start.dateTime > evt2.start.date) return 1;
+		    if (evt1.start.dateTime < evt2.start.date) return -1;
+		    return 0;
+		}
+    }
+};
+
+// Sort both allDay and non-allDay events by start date. Sorting is done so tabbing through the events
+// in the calendar happens chronologically.
+var sort_calendar_events_by_start_date = function(evt1, evt2){
+
+    if (evt1.start.date && evt2.start.date){ // Both events are allDay events.
+    	return compare_two_all_day_events(evt1, evt2);
+    }
+    else if (evt1.start.dateTime && evt2.start.dateTime){ // Both events are non-allDay events.
+    	return compare_two_events(evt1, evt2);
+    }
+    else{
+    	return compare_event_with_all_day_event(evt1, evt2); // One allDay event and one non-allDay event.
+    }
+};
+
+// Function used to update some of the fullcalendar form elements to help improve accessibility.
+var decorateControlsForAccessibility = function(){
+    
+	decorateButtonsForAccessibility();
+    addListenerToEventLinks();
+    initializeControlsToAddEvent();
+    
+};
+
+// Modify navigation and view buttons so we can tab to them and select them with the enter key.
+var decorateButtonsForAccessibility = function(){
+	// Buttons we desire to access via the keyboard
+    $('.fc-button-next').html('<a href="#">next &#62</a>');
+    $('.fc-button-prev').html('<a href="#">&#60; prev</a>');
+    $('.fc-button-today').html('<a href="#">today</a>');
+    $('.fc-button-month').html('<a href="#">month</a>');              
+    $('.fc-button-agendaDay').html('<a href="#">day</a>');
+    $('.fc-button-agendaWeek').html('<a href="#">week</a>'); 
+};
+
+// Capture user input date and validation.
+var initializeControlsToAddEvent = function(){
+
+    // Add handler to "new event" button so user can add event with keyboard.
+    $('.newEventButton').live("click", function(e){
+    	var userEnteredDate = $('#newEventDateField').val();
+    	
+    	if (userEnteredDate == null || userEnteredDate ===""){
+    	    alert(lang.langdata.dateRequired);
+    	    return;
+    	}
+    	// Validate date format
+    	var eventDate = moment(userEnteredDate, "MM-DD-YYYY");
+    	if (!eventDate.isValid()){
+    		alert(lang.langdata.invalidDateFormat);
+    		return;
+    	}
+    	// Should have a valid date now in expected format
+    	var validEventDate = new Date(userEnteredDate);
+        displayNewEventDialog(validEventDate, true);
+    });
+};
+
+// Modify table to provide additional information for accessibility.
+var decorateTableForAccessibility = function(){
+	var view = $('#calendar').fullCalendar('getView');
+	// Fullcalendar does not provide a caption for the table so we add one when page loads.
+	// As the user navigates through different views we update the caption text to reflect the current view.
+	if ($('.fc-header caption').length === 0){
+		$('.fc-header').prepend('<caption class="skip">Displaying ' + view.name + ' for ' + view.title + '</caption>');
+	}
+	else{
+		$('.fc-header caption').text('Displaying ' +  view.name + ' for ' + view.title.replace('&#8212;', '-') );
+	}
+	
+	setFocusOnTitle();
+};
+
+//Add event handler to capture user hitting the "enter" key on a calendar event.
+var addListenerToEventLinks = function(){
+    $('.fc-event').live('keydown',function(e){ // keypress did not work with Chrome. Had to use keydown.
+        if(e.which == 13) {
+            e.preventDefault();
+            var url = $(this).attr('href');
+            var eventDetailWin = window.open(url, 'eventDetail', config = 'height=700,width=600');
+            if (window.focus) {
+                eventDetailWin.focus();
+            }
+        }
+    });	
+};
+
+// Consistently set focus on title after changes in view or navigation.
+var setFocusOnTitle = function(){
+	$('.fc-header-title h2').attr('tabIndex', '-1'); // -1 means element gets skipped when tabbing through the form.
+	$('.fc-header-title h2').focus();
+};
+
+// Handles the display of error messages in the new event dialog.
+var displayNewEventDialogErrorMessage = function(errorMessage){
+    $("#newEvent").prepend("<p class=\"messageValidation\" style=\"height:20px\" >" + errorMessage + "</p>");
+    $("#newEvent .messageValidation").attr("tabindex", "0"); // Tabindex required to set focus on a <p> tag.
+    $("#newEvent .messageValidation").focus();
+};
+
+var displayNewEventDialog = function(date, allDay){
+	
+	if ( editable == false || createEvents == false )
+    	return false;
+	
+    var $dialogDiv = $('<div id="newEvent"></div>').appendTo(document.body);
+    $dialogDiv.html($('.newEventTemplate').html());               
+    
+    // need to remove the event so there are not two fields with the same name on the page (for accessibility)
+    var temp = $('.newEventTemplate').html();
+    $('.newEventTemplate').html("");
+
+    $dialogDiv.dialog({
+        width : 580,
+        height : 400,
+        position : "center",
+        autoOpen : true,
+        modal : true,
+        draggable : true,
+        resizable : false,
+        title : "New Event",
+        close : function(event, ui) {
+            // Clean up: remove dialog, its children, and the events from DOM
+            $('#newEvent').remove(); 
+            // when we are all done, put the template back
+            $('.newEventTemplate').html(temp);
+        }
+    });
+    
+    $("#newEvent .newEventDate").text(date.yyyymmdd());          
+   
+    if (allDay) {
+        $("#newEvent .newEventAllDay").attr("checked", true);
+        $("#newEvent .newEventTimeClass").hide();                 
+    } else {
+        $("#newEvent .newEventAllDay").attr("checked", false);
+        $("#newEvent .newEventTimeClass").show();
+                         
+        var eventStartTimeValue = date.toRFC3339().substring(11, 16);
+        var eventEndTimeValue = date.addHours(1).toRFC3339().substring(11, 16);
+        
+        var eventStartTimeText = getEventTimeText(eventStartTimeValue);
+        var eventEndTimeText = getEventTimeText(eventEndTimeValue);
+        
+        // Initialize the timepickers.
+        $('#newEventStartTime').timepicker({'minTime': eventStartTimeText});
+        $('#newEventEndTime').timepicker({'minTime': eventStartTimeText, 'showDuration': true});
+        
+        // Update the entry fields on the page with the time values.
+        $('#newEventStartTime').val(eventStartTimeText);
+        $('#newEventEndTime').val(eventEndTimeText);
+    }
+    
+    // Event handler for changes in start time; need to update the end time picker
+    $("#newEventStartTime").on("change", function(){
+    	var startTimeValue = $(this).val(); 
+    	$('#newEventEndTime').timepicker('option', {'minTime' : startTimeValue, 'showDuration': true}); 
+    });
+    
+    // event handler for checkbox
+    $("#newEvent .newEventAllDay").live("click", function(e) {                                                       
+        if ($("#newEvent .newEventAllDay:checked").length) {
+            $("#newEvent .newEventTimeClass").hide();
+        } else {
+            $("#newEvent .newEventTimeClass").show();
+            // Initialize the time pickers.
+            $('#newEventStartTime').timepicker({'scrollDefaultNow':true}); 
+            $('#newEventEndTime').timepicker({'scrollDefaultNow':true}); 
+        }                    
+    });
+    // There is currently no visual clue that focus is on the all day checkbox so we add these focus related handlers to help.
+    $("#newEvent .newEventAllDay").on("focus", function(e){
+    	$('label[for="newEventAllDay"]').addClass("checkboxHighlighter");
+    });
+    $("#newEvent .newEventAllDay").on("focusout", function(e){
+    	$('label[for="newEventAllDay"]').removeClass("checkboxHighlighter");
+    });
+ 
+    // event handler for create event button
+    $("#newEvent .newEventSave").live("click", function(e) {
+        var eventSummary = $("#newEvent .newEventTitle").val();
+        var tmpEventStartTimeValue = $("#newEventStartTime").val();
+        var tmpEventEndTimeValue = $("#newEventEndTime").val(); 
+        
+        allDay = false;
+        if ($("#newEvent .newEventAllDay:checked").length) {
+        	allDay = true;
+        }
+        
+        if ( !allDay ) {
+        	var eventEndTimeValue = getEventTimeValue(tmpEventEndTimeValue );    
+            if ( eventEndTimeValue < 0 ) {
+            	$("#newEvent .messageValidation").remove();
+            	displayNewEventDialogErrorMessage(lang.langdata.invalidEndTime);
+                return;
+            }
+            var eventStartTimeValue = getEventTimeValue(tmpEventStartTimeValue );
+            if ( eventStartTimeValue < 0 ) {
+            	$("#newEvent .messageValidation").remove();
+            	displayNewEventDialogErrorMessage(lang.langdata.invalidStartTime);
+                return;
+            }
+        }
+        // make sure end is after start
+        if ( ( eventEndTimeValue < eventStartTimeValue ) && ( !allDay ) ) {
+        	$("#newEvent .messageValidation").remove();
+        	displayNewEventDialogErrorMessage(lang.langdata.startBeforeEndTime);
+        } else {
+            var tempString = eventSummary.replace(/^\s+|\s+$/g, ""); // trim
+            var eventSummary1 = tempString.replace(/'/g, "\\'"); // escape '
+
+            if (eventSummary1 == null || eventSummary1 === "") {
+                eventSummary1 = "No title";
+            }
+            processSave(eventSummary1, eventStartTimeValue, eventEndTimeValue, userTimeZone);
+        }
+    });	
+
+    processSave = function(eventSummaryValue, eventStartTimeValue, eventEndTimeValue, userTimeZone) {	   
+        var data2;
+        var starttime;
+        var endtime;
+        var json;
+        var jsonContext;
+        
+        // if it is all day event
+    	if ($("#newEvent .newEventAllDay:checked").length) {
+    		starttime = date.yyyymmdd();
+    		endtime = date.addHours(24).yyyymmdd();		
+    		data2 = "{'end': {'date': '" + endtime + "'},'start': {'date': '" + starttime + "'},'summary': '" + eventSummaryValue + "'}";
+    	} else {
+    		starttime = date.yyyymmdd();
+    		endtime = date.yyyymmdd();
+    		starttime = starttime + "T" + eventStartTimeValue + ":00";
+            endtime = endtime + "T" + eventEndTimeValue + ":00";
+    		data2 = "{'end': {'dateTime': '" + endtime + "', 'timeZone':'"+ userTimeZone + "'},'start': {'dateTime': '" + starttime + "', 'timeZone':'"+ userTimeZone + "'},'summary': '" + eventSummaryValue + "'}";
+    	}               	
+
+    	json = "json";
+		jsonContext = "application/json";
+    	
+        jQuery.ajax({
+            type : "POST",
+            contentType : jsonContext,
+            data : data2,
+            url : baseUrl + '/' + proxyName + '/calendar/v3/calendars/' + gcalid + '/events?access_token=' + accesstoken +'&amp;' + Math.floor((Math.random()*100)+1),
+            dataType : json,
+            async: false, // when true, you can get multiple events created
+            cache: false,
+            timeout: 5000,
+
+            // if ajax call success
+            success : function(datain) {
+                // close dialog
+                $("#newEvent").dialog("close"); 
+                var startdate;
+                var enddate;
+                var allday;
+
+                if (null != datain.start ) { 
+                	if ( null != datain.start.dateTime) { 
+                        startdate = datain.start.dateTime;
+                        enddate = datain.end.dateTime;
+                        allday = false;
+                    } else {
+                        startdate = datain.start.date;
+                        //enddate = new Date(datain.end.date); // Do not set the enddate because it causes repeating events
+                        allday = true; 
+                    }
+            	} else { 
+                	allday = true;
+            	} 
+
+                $('#calendar').fullCalendar('renderEvent', {
+                    id : datain.id,
+                    title : datain.summary,
+                    start : startdate,
+                    end : enddate,
+                    url : datain.htmlLink,
+                    description : datain.description,
+                    location : datain.location,
+                    allDay : allday
+                }, false // 'stick' flag
+                );
+                
+                // load info into eventArray
+                eventArray.push({
+                    id : datain.id,
+                    title : datain.summary,
+                    start : startdate,
+                    end : enddate,
+                    url : datain.htmlLink,
+                    description : datain.description,
+                    location : datain.location,
+                    allDay : allday,
+                    sequence : datain.sequence,
+                    recurrence : datain.recurrence,
+                    recurringEventId : datain.recurringEventId
+                });
+            },
+
+            // if ajax call failed
+            error : function(XMLHttpRequest, textStatus, errorThrown) {
+                $("#newEvent .messageValidation").remove();
+                displayNewEventDialogErrorMessage(lang.langdata.errorCreatingEvent);
+                //alert( "creating event failed " + textStatus + " " + errorThrown ); // TODO: distinguish between end before start
+                // and AJAX error
+            }
+        });  
+    };
+
+};
+
+
 // Show spinner whenever async activity takes place
 $(document).ready(function() {
 	$(document).ajaxStart(function(){
@@ -39,6 +384,7 @@ $(document).ready(function() {
 	$(document).ajaxStop(function(){
 		$('#spinner').hide();
 	});
+	
 });
 
 getGoogleCalendar = function(accesstoken, gcalid) {
@@ -81,6 +427,10 @@ getGoogleCalendar = function(accesstoken, gcalid) {
         	}
 		},
 
+		eventAfterAllRender: function(view){
+			decorateTableForAccessibility();
+		},
+		
         // get all the events in the given time range from google calendar
         events : function(start, end, callback) { 
         	refreshCalendarItems( start, end, callback );
@@ -231,211 +581,7 @@ getGoogleCalendar = function(accesstoken, gcalid) {
 
         // create an event in a day
         dayClick : function(date, allDay, jsEvent, view) {
-        	
-        	if ( editable == false || createEvents == false )
-            	return false;
-        	
-            $(function() {               
-                var $dialogDiv = $('<div id="newEvent"></div>').appendTo(document.body);
-                $dialogDiv.html($('.newEventTemplate').html());               
-                
-                // need to remove the event so there are not two fields with the same name on the page (for accessibility)
-                var temp = $('.newEventTemplate').html();
-                $('.newEventTemplate').html("");
-
-                $dialogDiv.dialog({
-                    width : 580,
-                    height : 400,
-                    position : "center",
-                    autoOpen : true,
-                    modal : true,
-                    draggable : true,
-                    resizable : false,
-                    title : "New Event",
-                    close : function(event, ui) {
-                        // Clean up: remove dialog, its children, and the events from DOM
-                        $('#newEvent').remove(); 
-                        // when we are all done, put the template back
-                        $('.newEventTemplate').html(temp);
-                    }
-                });
-                
-                $("#newEvent .newEventDate").text(date.yyyymmdd());          
-               
-                if (allDay) {
-                    $("#newEvent .newEventAllDay").attr("checked", true);
-                    $("#newEvent .newEventTimeClass").hide();                 
-                } else {
-                    $("#newEvent .newEventAllDay").attr("checked", false);
-                    $("#newEvent .newEventTimeClass").show();
-                                     
-                    var eventStartTimeValue = date.toRFC3339().substring(11, 16);
-                    var eventEndTimeValue = date.addHours(1).toRFC3339().substring(11, 16);
-                    
-                    var eventStartTimeText = getEventTimeText(eventStartTimeValue);
-                    var eventEndTimeText = getEventTimeText(eventEndTimeValue);
-                    
-                    // Initialize the timepickers.
-                    $('#newEventStartTime').timepicker({'minTime': eventStartTimeText});
-                    $('#newEventEndTime').timepicker({'minTime': eventStartTimeText, 'showDuration': true});
-                    
-                    // Update the entry fields on the page with the time values.
-                    $('#newEventStartTime').val(eventStartTimeText);
-                    $('#newEventEndTime').val(eventEndTimeText);
-                }
-                
-                // Event handler for changes in start time; need to update the end time picker
-                $("#newEventStartTime").on("change", function(){
-                	var startTimeValue = $(this).val(); 
-                	$('#newEventEndTime').timepicker('option', {'minTime' : startTimeValue, 'showDuration': true}); 
-                });
-                
-                // event handler for checkbox
-                $("#newEvent .newEventAllDay").live("click", function(e) {                                                       
-                    if ($("#newEvent .newEventAllDay:checked").length) {
-                        $("#newEvent .newEventTimeClass").hide();
-                    } else {
-                        $("#newEvent .newEventTimeClass").show();
-                        // Initialize the time pickers.
-                        $('#newEventStartTime').timepicker({'scrollDefaultNow':true}); 
-                        $('#newEventEndTime').timepicker({'scrollDefaultNow':true}); 
-                    }                    
-                });
-                
-                // event handler for create event button
-                $("#newEvent .newEventSave").live("click", function(e) {
-                    var eventSummary = $("#newEvent .newEventTitle").val();
-                    var tmpEventStartTimeValue = $("#newEventStartTime").val();
-                    var tmpEventEndTimeValue = $("#newEventEndTime").val(); 
-                    
-                    allDay = false;
-                    if ($("#newEvent .newEventAllDay:checked").length) {
-                    	allDay = true;
-                    }
-                    
-                    if ( !allDay ) {
-                    	var eventEndTimeValue = getEventTimeValue(tmpEventEndTimeValue );    
-	                    if ( eventEndTimeValue < 0 ) {
-	                    	$("#newEvent .messageValidation").remove();
-	                        $("#newEvent").prepend("<p class=\"messageValidation\" style=\"height:20px\" >Sorry, unable to create the event. Invalid End Time format.</p>");
-	                        return;
-	                    }
-	                    var eventStartTimeValue = getEventTimeValue(tmpEventStartTimeValue );
-	                    if ( eventStartTimeValue < 0 ) {
-	                    	$("#newEvent .messageValidation").remove();
-	                        $("#newEvent").prepend("<p class=\"messageValidation\" style=\"height:20px\" >Sorry, unable to create the event. Invalid Start Time format.</p>");
-	                        return;
-	                    }
-                    }
-                    // make sure end is after start
-                    if ( ( eventEndTimeValue < eventStartTimeValue ) && ( !allDay ) ) {
-                    	$("#newEvent .messageValidation").remove();
-                        $("#newEvent").prepend("<p class=\"messageValidation\" style=\"height:20px\" >Start Time must be before End Time.</p>");
-                    } else {
-	                    var tempString = eventSummary.replace(/^\s+|\s+$/g, ""); // trim
-	                    var eventSummary1 = tempString.replace(/'/g, "\\'"); // escape '
-
-	                    if (eventSummary1 == null || eventSummary1 === "") {
-	                        eventSummary1 = "No title";
-	                    }
-	                    processSave(eventSummary1, eventStartTimeValue, eventEndTimeValue, userTimeZone);
-                    }
-                });
-            });
-
-            // function to save the created event making use of the timezone
-            processSave = function(eventSummaryValue, eventStartTimeValue, eventEndTimeValue, userTimeZone) {	   
-                var data2;
-                var starttime;
-                var endtime;
-                var json;
-                var jsonContext;
-                
-                // if it is all day event
-            	if ($("#newEvent .newEventAllDay:checked").length) {
-            		starttime = date.yyyymmdd();
-            		endtime = date.addHours(24).yyyymmdd();		
-            		data2 = "{'end': {'date': '" + endtime + "'},'start': {'date': '" + starttime + "'},'summary': '" + eventSummaryValue + "'}";
-            	} else {
-            		starttime = date.yyyymmdd();
-            		endtime = date.yyyymmdd();
-            		starttime = starttime + "T" + eventStartTimeValue + ":00";
-                    endtime = endtime + "T" + eventEndTimeValue + ":00";
-            		data2 = "{'end': {'dateTime': '" + endtime + "', 'timeZone':'"+ userTimeZone + "'},'start': {'dateTime': '" + starttime + "', 'timeZone':'"+ userTimeZone + "'},'summary': '" + eventSummaryValue + "'}";
-            	}               	
-
-            	json = "json";
-        		jsonContext = "application/json";
-            	
-                jQuery.ajax({
-                    type : "POST",
-                    contentType : jsonContext,
-                    data : data2,
-                    url : baseUrl + '/' + proxyName + '/calendar/v3/calendars/' + gcalid + '/events?access_token=' + accesstoken +'&amp;' + Math.floor((Math.random()*100)+1),
-                    dataType : json,
-                    async: false, // when true, you can get multiple events created
-                    cache: false,
-                    timeout: 5000,
-
-                    // if ajax call success
-                    success : function(datain) {
-                        // close dialog
-                        $("#newEvent").dialog("close"); 
-                        var startdate;
-                        var enddate;
-                        var allday;
-
-                        if (null != datain.start ) { 
-                        	if ( null != datain.start.dateTime) { 
-	                            startdate = datain.start.dateTime;
-	                            enddate = datain.end.dateTime;
-	                            allday = false;
-	                        } else {
-	                            startdate = datain.start.date;
-	                            //enddate = new Date(datain.end.date); // Do not set the enddate because it causes repeating events
-	                            allday = true; 
-	                        }
-                    	} else { 
-                        	allday = true;
-                    	} 
- 
-                        $('#calendar').fullCalendar('renderEvent', {
-                            id : datain.id,
-                            title : datain.summary,
-                            start : startdate,
-                            end : enddate,
-                            url : datain.htmlLink,
-                            description : datain.description,
-                            location : datain.location,
-                            allDay : allday
-                        }, false // 'stick' flag
-                        );
-                        
-                        // load info into eventArray
-                        eventArray.push({
-	                        id : datain.id,
-	                        title : datain.summary,
-	                        start : startdate,
-	                        end : enddate,
-	                        url : datain.htmlLink,
-	                        description : datain.description,
-	                        location : datain.location,
-	                        allDay : allday,
-	                        sequence : datain.sequence,
-	                        recurrence : datain.recurrence,
-	                        recurringEventId : datain.recurringEventId
-	                    });
-                    },
-
-                    // if ajax call failed
-                    error : function(XMLHttpRequest, textStatus, errorThrown) {
-                        $("#newEvent .messageValidation").remove();
-                        $("#newEvent").prepend("<p class=\"messageValidation\" style=\"height:20px\" >Sorry, unable to create the event.</p>");
-                        //alert( "creating event failed " + textStatus + " " + errorThrown ); // TODO: distinguish between end before start
-                        // and AJAX error
-                    }
-                });  
-            };
+        	displayNewEventDialog(date, allDay);
         }
     });
 };
@@ -584,6 +730,9 @@ refreshCalendarItems = function( start, end, callback ) {
         	eventArray.length = 0; // Clear out the array
             var itemsize = data.items.length; 
 
+            // Sort array events by start date so user can tab through events in chronolgical order.	
+            data.items.sort(sort_calendar_events_by_start_date);
+            
             if ( itemsize > 0 ) {
 		        jQuery.each(data.items, function(i, item) {
 		            var startdate;
@@ -631,11 +780,12 @@ refreshCalendarItems = function( start, end, callback ) {
         // if ajax call failed 
         error : function(XMLHttpRequest, textStatus, errorThrown) {
             $("#newEvent .messageValidation").remove();
-            $("#newEvent").prepend("<p class=\"messageValidation\" style=\"height:20px\" >Sorry, cannot get information from the Google calendar!</p>");
+            displayNewEventDialogErrorMessage(lang.langdata.problemAccessingGoogle);
         	//if (null !== console ) { console.log( "AJAX call failed getting info from Google calendar " + textStatus + " " + errorThrown ); } 
         },
         
         complete : function () {
+        	decorateControlsForAccessibility(); // Update dom elements so we can access them with keyboard.
         	callback(eventArray); // return callback here to pick up all events
         }
     });

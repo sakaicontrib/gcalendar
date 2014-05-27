@@ -10,3 +10,25 @@
     top: 20%;
     left: 33%;
 }
+.skip {
+   outline:1px solid transparent;
+    display: inline !important; 
+    position: fixed !important; 
+    height: 1px !important; 
+    width: 1px !important; 
+    overflow: hidden !important;
+    top: 0px !important;
+    left: 0px; 
+    padding: 0px 0px 0px 0px !important;
+}
+.fc-event:focus .fc-event-inner {
+    background:#c00;
+    text-decoration:underline;
+}
+.checkboxHighlighter 
+{ 
+  border: 1px solid #C1E0FF;
+}
+.fc-header-title h2:focus{
+	outline:none;
+}

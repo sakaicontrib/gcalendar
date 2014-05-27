@@ -17,6 +17,7 @@
 <script type='text/javascript' src='/sakai-gcalendar-tool/js/timepicker/lib/base.js'></script> ## Used in timepicker plugin
 <script type='text/javascript' src='/sakai-gcalendar-tool/js/timepicker/jquery.timepicker.min.js'></script> ## Plugin for timepicker
 
+<script type='text/javascript' src='/library/js/moment/2.4.0/moment.min.js'></script>
 <script type='text/javascript' src='/sakai-gcalendar-tool/js/gcalendar.js'></script>
 <div class="portletBody">
 #if($menu)
@@ -51,10 +52,13 @@
 	var baseUrl = '${baseUrl}';
 	var proxyName = '${proxyName}';
 	var userTimeZone = '${userTimeZone}';
-	
+	var lang;
 	$(document).ready(function() {
 	
 		getGoogleCalendar(accesstoken, gcalid);
+		
+		//load the language bundle via a json stored in a hidden textarea
+		lang = eval('(' + $('#langstrings').val() + ')');
 		
 	});
 
@@ -80,6 +84,16 @@
 
 </style>
 <body>
+## Do not display this if user does not have privileges to add events.
+#if ($createEventsAllowed == "true")
+	<div class="skipxx">
+	<p>To create a new event on this calendar, please enter a date and click on the continue button to enter additional information for the event. Today's 
+	date is provided as default.</p>
+		<p><label for="newEventDateField">Date: (e.g. mm/dd/yyyy)</label> <input type="text" id="newEventDateField"></p>
+		<p><input type="button" class="newEventButton" value='$tlang.getString("gcal.event.continue")'> </p>
+	</div>
+#end
+
 <div id='loading' style='display:none'></div>
 <div id='calendar'></div>
 
@@ -110,4 +124,18 @@
 
 <p>$tlang.getString("gcal.shareCalendar")<a href="$googlelink" target="_blank"> $googlelink</a></p>
 <div id='spinner'></div>
+
+<textarea cols="120" rows="20" id="langstrings" style="display:none">
+{
+    "langdata": {
+        "invalidStartTime": "$tlang.getString("gcal.error.invalid.start.time")",
+        "invalidEndTime": "$tlang.getString("gcal.error.invalid.end.time")",
+        "startBeforeEndTime": "$tlang.getString("gcal.error.start.before.end.time")",
+        "dateRequired": "$tlang.getString("gcal.error.date.required")",
+        "errorCreatingEvent": "$tlang.getString("gcal.error.create.event")",
+        "problemAccessingGoogle": "$tlang.getString("gcal.error.access.google")",
+        "invalidDateFormat": "$tlang.getString("gcal.error.invalid.format")"
+    }
+}
+</textarea> 
 </body>
