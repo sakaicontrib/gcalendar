@@ -260,7 +260,7 @@ var displayNewEventDialog = function(date, allDay){
             var tempString = eventSummary.replace(/^\s+|\s+$/g, ""); // trim
             var eventSummary1 = tempString.replace(/'/g, "\\'"); // escape '
 
-            if (eventSummary1 === null || eventSummary1 === "") {
+            if (eventSummary1 == null || eventSummary1 == "") {
                 eventSummary1 = "No title";
             }
             processSave(eventSummary1, eventStartTimeValue, eventEndTimeValue, userTimeZone);
@@ -308,8 +308,8 @@ var displayNewEventDialog = function(date, allDay){
                 var enddate;
                 var allday;
 
-                if (null !== datain.start ) { 
-                	if ( null !== datain.start.dateTime) { 
+                if (null != datain.start ) { 
+                	if ( null != datain.start.dateTime) { 
                         startdate = datain.start.dateTime;
                         enddate = datain.end.dateTime;
                         allday = false;
