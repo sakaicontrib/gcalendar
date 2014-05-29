@@ -29,9 +29,6 @@
 	</ul>
 #end
 	
-	<h3>
-		$tlang.getString("gcal.title")
-	</h3>
 	<textarea id="accesstoken" style="visibility:hidden; display:none;">$accesstoken</textarea>
 	<textarea id="gcalid" style="visibility:hidden; display:none;">$gcalid</textarea>
 	<textarea id="viewDetailsAllowed" style="visibility:hidden; display:none;">$viewDetailsAllowed</textarea>
@@ -54,11 +51,11 @@
 	var userTimeZone = '${userTimeZone}';
 	var lang;
 	$(document).ready(function() {
-	
-		getGoogleCalendar(accesstoken, gcalid);
-		
+
 		//load the language bundle via a json stored in a hidden textarea
 		lang = eval('(' + $('#langstrings').val() + ')');
+	
+		getGoogleCalendar(accesstoken, gcalid);
 		
 	});
 
@@ -86,9 +83,8 @@
 <body>
 ## Do not display this if user does not have privileges to add events.
 #if ($createEventsAllowed == "true")
-	<div class="skipxx">
-	<p>To create a new event on this calendar, please enter a date and click on the continue button to enter additional information for the event. Today's 
-	date is provided as default.</p>
+	<div class="skip">
+	<p>To create a new event on this calendar, please enter a date and click on the continue button to enter additional information for the event.</p>
 		<p><label for="newEventDateField">Date: (e.g. mm/dd/yyyy)</label> <input type="text" id="newEventDateField"></p>
 		<p><input type="button" class="newEventButton" value='$tlang.getString("gcal.event.continue")'> </p>
 	</div>
@@ -128,13 +124,22 @@
 <textarea cols="120" rows="20" id="langstrings" style="display:none">
 {
     "langdata": {
-        "invalidStartTime": "$tlang.getString("gcal.error.invalid.start.time")",
-        "invalidEndTime": "$tlang.getString("gcal.error.invalid.end.time")",
-        "startBeforeEndTime": "$tlang.getString("gcal.error.start.before.end.time")",
-        "dateRequired": "$tlang.getString("gcal.error.date.required")",
-        "errorCreatingEvent": "$tlang.getString("gcal.error.create.event")",
-        "problemAccessingGoogle": "$tlang.getString("gcal.error.access.google")",
-        "invalidDateFormat": "$tlang.getString("gcal.error.invalid.format")"
+		"invalidStartTime": "$tlang.getString("gcal.error.invalid.start.time")",
+		"invalidEndTime": "$tlang.getString("gcal.error.invalid.end.time")",
+		"startBeforeEndTime": "$tlang.getString("gcal.error.start.before.end.time")",
+		"dateRequired": "$tlang.getString("gcal.error.date.required")",
+		"errorCreatingEvent": "$tlang.getString("gcal.error.create.event")",
+		"problemAccessingGoogle": "$tlang.getString("gcal.error.access.google")",
+		"invalidDateFormat": "$tlang.getString("gcal.error.invalid.format")",
+		"eventNotFound": "$tlang.getString("gcal.error.notfind.event")",
+		"updateEventFailed": "$tlang.getString("gcal.error.update.event.failed")",
+		"buttonToday": "$tlang.getString("gcal.navigation.today")",
+		"buttonNext": "$tlang.getString("gcal.navigation.next")",
+		"buttonPrev": "$tlang.getString("gcal.navigation.prev")",
+		"buttonMonth": "$tlang.getString("gcal.view.month")",
+		"buttonWeek": "$tlang.getString("gcal.view.week")",
+		"buttonDay": "$tlang.getString("gcal.view.day")",
+		"calendarViewTitle": "$tlang.getString("gcal.view.title")"
     }
 }
 </textarea> 

@@ -27,6 +27,8 @@ var eventTimeTextArray = ["12:00am", "12:30am", "1:00am", "1:30am", "2:00am", "2
                           "6:00pm", "6:30pm", "7:00pm", "7:30pm", "8:00pm", "8:30pm", "9:00pm", "9:30pm", "10:00pm", "10:30pm", "11:00pm", "11:30pm"];
 
 var EVENT_TITLE_MAX_SIZE = 60;
+var CNTL_KEY_EVENT_KEYCODE_13 = 13;
+
 // Variable to manage the Google event pop-up window.
 var gCalPopUpHandle; // Handle to GCal pop-up window.
 var intervalHandle; // Handle to timer service that checks if pop-up has closed.
@@ -34,32 +36,30 @@ var intervalHandle; // Handle to timer service that checks if pop-up has closed.
 
 // Method to compare two non-allDay events.
 var compare_two_events = function (evt1, evt2) {
-	if (evt1.start.dateTime > evt2.start.dateTime) {return 1;}
-	if (evt1.start.dateTime < evt2.start.dateTime) {return -1;}
+	if (moment(evt1.start.dateTime) > moment(evt2.start.dateTime)) {return 1;}
+	if (moment(evt1.start.dateTime) < moment(evt2.start.dateTime)) {return -1;}
 	return 0;
 	};
 	
 // Method to compare two allDay events.
 var compare_two_all_day_events = function (evt1, evt2){
-    if (evt1.start.date > evt2.start.date) {return 1;}
-    if (evt1.start.date < evt2.start.date) {return -1;}
+    if (moment(evt1.start.date) > moment(evt2.start.date)) {return 1;}
+    if (moment(evt1.start.date) < moment(evt2.start.date)) {return -1;}
     return 0;
 };
 
 // Method to compare an allDay event with a non-allDay event.
 var compare_event_with_all_day_event = function(evt1, evt2){
     if (evt1.start.date){ // evt1 is an allDay event.
-    	if (evt1.start.date > evt2.start.dateTime) return 1;
-    	if (evt1.start.date < evt2.start.dateTime) return -1;
+    	if (moment(evt1.start.date) > moment(evt2.start.dateTime)) return 1;
+    	if (moment(evt1.start.date) < moment(evt2.start.dateTime)) return -1;
     	return 0;
     }
-    else{
-		if (evt1.start.dateTime){ // evt1 is a non-allDay event.
-		    if (evt1.start.dateTime > evt2.start.date) return 1;
-		    if (evt1.start.dateTime < evt2.start.date) return -1;
-		    return 0;
-		}
-    }
+	if (evt1.start.dateTime){ // evt1 is a non-allDay event.
+	    if (moment(evt1.start.dateTime) > moment(evt2.start.date)) return 1;
+	    if (moment(evt1.start.dateTime) < moment(evt2.start.date)) return -1;
+	    return 0;
+	}
 };
 
 // Sort both allDay and non-allDay events by start date. Sorting is done so tabbing through the events
@@ -81,30 +81,30 @@ var sort_calendar_events_by_start_date = function(evt1, evt2){
 var decorateControlsForAccessibility = function(){
     
 	decorateButtonsForAccessibility();
-    addListenerToEventLinks();
-    initializeControlsToAddEvent();
+	addListenerToEventLinks();
+	initializeControlsToAddEvent();
     
 };
 
 // Modify navigation and view buttons so we can tab to them and select them with the enter key.
 var decorateButtonsForAccessibility = function(){
 	// Buttons we desire to access via the keyboard
-    $('.fc-button-next').html('<a href="#">next &#62</a>');
-    $('.fc-button-prev').html('<a href="#">&#60; prev</a>');
-    $('.fc-button-today').html('<a href="#">today</a>');
-    $('.fc-button-month').html('<a href="#">month</a>');              
-    $('.fc-button-agendaDay').html('<a href="#">day</a>');
-    $('.fc-button-agendaWeek').html('<a href="#">week</a>'); 
+    $('.fc-button-next').html(lang.langdata.buttonNext);
+    $('.fc-button-prev').html(lang.langdata.buttonPrev);
+    $('.fc-button-today').html(lang.langdata.buttonToday);
+    $('.fc-button-month').html(lang.langdata.buttonMonth);              
+    $('.fc-button-agendaDay').html(lang.langdata.buttonDay);
+    $('.fc-button-agendaWeek').html(lang.langdata.buttonWeek); 
 };
 
 // Capture user input date and validation.
 var initializeControlsToAddEvent = function(){
 
     // Add handler to "new event" button so user can add event with keyboard.
-    $('.newEventButton').live("click", function(e){
+    $('.newEventButton').on("click", function(e){
     	var userEnteredDate = $('#newEventDateField').val();
     	
-    	if (userEnteredDate == null || userEnteredDate ===""){
+    	if (userEnteredDate === null || userEnteredDate.trim() ===""){
     	    alert(lang.langdata.dateRequired);
     	    return;
     	}
@@ -125,25 +125,30 @@ var decorateTableForAccessibility = function(){
 	var view = $('#calendar').fullCalendar('getView');
 	// Fullcalendar does not provide a caption for the table so we add one when page loads.
 	// As the user navigates through different views we update the caption text to reflect the current view.
+
+	var captionText = lang.langdata.calendarViewTitle.replace('%1', view.name).replace('%2', view.title.replace('&#8212;', '-'));
+	
 	if ($('.fc-header caption').length === 0){
-		$('.fc-header').prepend('<caption class="skip">Displaying ' + view.name + ' for ' + view.title + '</caption>');
+		$('.fc-header').prepend('<caption class="skip">' + captionText + '</caption>');
 	}
 	else{
-		$('.fc-header caption').text('Displaying ' +  view.name + ' for ' + view.title.replace('&#8212;', '-') );
+		$('.fc-header caption').text(captionText );
 	}
-	
 	setFocusOnTitle();
 };
 
 //Add event handler to capture user hitting the "enter" key on a calendar event.
 var addListenerToEventLinks = function(){
-    $('.fc-event').live('keydown',function(e){ // keypress did not work with Chrome. Had to use keydown.
-        if(e.which == 13) {
+    $(document).on('keydown', '.fc-event', function(e){ // keypress did not work with Chrome. Had to use keydown.
+    	
+    	// We are listening for Enter to launch the pop-up in the real Google calendar because the fullCalendar  
+    	// is trapping all events, allowing only onclicks).
+        if(e.which === CNTL_KEY_EVENT_KEYCODE_13) {
             e.preventDefault();
             var url = $(this).attr('href');
-            var eventDetailWin = window.open(url, 'eventDetail', config = 'height=700,width=600');
+            gCalPopUpHandle = window.open(url, 'eventDetail', config = 'height=700,width=600');
             if (window.focus) {
-                eventDetailWin.focus();
+            	gCalPopUpHandle.focus();
             }
         }
     });	
@@ -164,7 +169,7 @@ var displayNewEventDialogErrorMessage = function(errorMessage){
 
 var displayNewEventDialog = function(date, allDay){
 	
-	if ( editable == false || createEvents == false )
+	if ( editable === false || createEvents === false )
     	return false;
 	
     var $dialogDiv = $('<div id="newEvent"></div>').appendTo(document.body);
@@ -222,7 +227,7 @@ var displayNewEventDialog = function(date, allDay){
     });
     
     // event handler for checkbox
-    $("#newEvent .newEventAllDay").live("click", function(e) {                                                       
+    $("#newEvent .newEventAllDay").on("click", function(e) {                                                       
         if ($("#newEvent .newEventAllDay:checked").length) {
             $("#newEvent .newEventTimeClass").hide();
         } else {
@@ -241,7 +246,7 @@ var displayNewEventDialog = function(date, allDay){
     });
  
     // event handler for create event button
-    $("#newEvent .newEventSave").live("click", function(e) {
+    $("#newEvent .newEventSave").on("click", function(e) {
         var eventSummary = $("#newEvent .newEventTitle").val();
         var tmpEventStartTimeValue = $("#newEventStartTime").val();
         var tmpEventEndTimeValue = $("#newEventEndTime").val(); 
@@ -273,7 +278,7 @@ var displayNewEventDialog = function(date, allDay){
             var tempString = eventSummary.replace(/^\s+|\s+$/g, ""); // trim
             var eventSummary1 = tempString.replace(/'/g, "\\'"); // escape '
 
-            if (eventSummary1 == null || eventSummary1 === "") {
+            if (eventSummary1 === null || eventSummary1 === "") {
                 eventSummary1 = "No title";
             }
             processSave(eventSummary1, eventStartTimeValue, eventEndTimeValue, userTimeZone);
@@ -321,8 +326,8 @@ var displayNewEventDialog = function(date, allDay){
                 var enddate;
                 var allday;
 
-                if (null != datain.start ) { 
-                	if ( null != datain.start.dateTime) { 
+                if (null !== datain.start ) { 
+                	if ( null !== datain.start.dateTime) { 
                         startdate = datain.start.dateTime;
                         enddate = datain.end.dateTime;
                         allday = false;
@@ -448,7 +453,7 @@ getGoogleCalendar = function(accesstoken, gcalid) {
             var starttime;
             var endtime;
             
-            if ( editable == false )
+            if ( editable === false )
             	return;
             	
             if ( index >= 0 ) {
@@ -488,12 +493,13 @@ getGoogleCalendar = function(accesstoken, gcalid) {
                     },
                     
             		error : function(XMLHttpRequest, textStatus, errorThrown) {
-                        alert( "Updating calendar event failed " + textStatus + " " + errorThrown );
+            			var errorMessage = lang.langdata.updateEventFailed;
+                        alert( errorMessage.replace('%1',textStatus).replace('%2', errorThrown) );
                         revertFunc();
             		}
             	});
             } else {
-            	alert( "Error - could not find the event");
+            	alert(lang.langdata.eventNotFound);
             }
            
         },
@@ -506,7 +512,7 @@ getGoogleCalendar = function(accesstoken, gcalid) {
             var starttime;
             var endtime;
             
-            if ( editable == false )
+            if ( editable === false )
             	return false;
             
             // if the event is a recurring event,
@@ -558,13 +564,13 @@ getGoogleCalendar = function(accesstoken, gcalid) {
             		}
             	});
             } else {
-            	alert( "Error - could not find the event");
+            	alert(lang.langdata.eventNotFound);
             }
         },
    
         // click the existing event in google calendar
         eventClick : function(event) {
-        	if ( editable == false )
+        	if ( editable === false )
             	return false;
         	
             // opens events in a popup window
@@ -700,7 +706,7 @@ findFullCalendarEvent = function( event ) {
 
 // Check if user has closed the Google calendar pop-up window and refresh display
 function checkIfPopUpIsClosed() {
-	if (gCalPopUpHandle != null && createEventsAllowed == "true" && gCalPopUpHandle.closed) {
+	if (gCalPopUpHandle !== null && createEventsAllowed == "true" && gCalPopUpHandle.closed) {
 		clearInterval(intervalHandle); // Clear timer service.
 		$('#calendar').fullCalendar( 'refetchEvents' ); // Refetch events to show any updates.
 	}
