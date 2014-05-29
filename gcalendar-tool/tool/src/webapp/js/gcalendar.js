@@ -33,47 +33,29 @@ var CNTL_KEY_EVENT_KEYCODE_13 = 13;
 var gCalPopUpHandle; // Handle to GCal pop-up window.
 var intervalHandle; // Handle to timer service that checks if pop-up has closed.
 
-
-// Method to compare two non-allDay events.
+// Compare two events dates/times.
 var compare_two_events = function (evt1, evt2) {
-	if (moment(evt1.start.dateTime) > moment(evt2.start.dateTime)) {return 1;}
-	if (moment(evt1.start.dateTime) < moment(evt2.start.dateTime)) {return -1;}
+	
+	if (evt1.isAfter(evt2)) {return 1;}
+	if (evt1.isBefore(evt2)) {return -1;}
 	return 0;
 	};
-	
-// Method to compare two allDay events.
-var compare_two_all_day_events = function (evt1, evt2){
-    if (moment(evt1.start.date) > moment(evt2.start.date)) {return 1;}
-    if (moment(evt1.start.date) < moment(evt2.start.date)) {return -1;}
-    return 0;
-};
-
-// Method to compare an allDay event with a non-allDay event.
-var compare_event_with_all_day_event = function(evt1, evt2){
-    if (evt1.start.date){ // evt1 is an allDay event.
-    	if (moment(evt1.start.date) > moment(evt2.start.dateTime)) return 1;
-    	if (moment(evt1.start.date) < moment(evt2.start.dateTime)) return -1;
-    	return 0;
-    }
-	if (evt1.start.dateTime){ // evt1 is a non-allDay event.
-	    if (moment(evt1.start.dateTime) > moment(evt2.start.date)) return 1;
-	    if (moment(evt1.start.dateTime) < moment(evt2.start.date)) return -1;
-	    return 0;
-	}
-};
 
 // Sort both allDay and non-allDay events by start date. Sorting is done so tabbing through the events
 // in the calendar happens chronologically.
 var sort_calendar_events_by_start_date = function(evt1, evt2){
 
     if (evt1.start.date && evt2.start.date){ // Both events are allDay events.
-    	return compare_two_all_day_events(evt1, evt2);
+    	return compare_two_events(moment(evt1.start.date), moment(evt2.start.date));
     }
     else if (evt1.start.dateTime && evt2.start.dateTime){ // Both events are non-allDay events.
-    	return compare_two_events(evt1, evt2);
+    	return compare_two_events(moment(evt1.start.dateTime), moment(evt2.start.dateTime));
+    } // One allDay event and one non-allDay event.
+    else if (evt1.start.date && evt2.start.dateTime){
+    	return compare_two_events(moment(evt1.start.date), moment(evt2.start.dateTime));
     }
     else{
-    	return compare_event_with_all_day_event(evt1, evt2); // One allDay event and one non-allDay event.
+    	return compare_two_events(moment(evt1.start.dateTime), moment(evt2.start.date));
     }
 };
 
