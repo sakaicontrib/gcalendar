@@ -32,7 +32,8 @@ import org.sakaiproject.gcalendar.api.SakaiGCalendarServiceStaticVariables;
 import org.sakaiproject.site.api.Site;
 
 /**
- * This observer is notified when a site duplication is finished so it can remove the gcalid from the new site properties.
+ * This observer is notified when a site duplication is finished so it can remove the gcalid for the original site
+ *  from the new site properties.
  */
 public class GcalEventWatcher implements Observer{
 
@@ -68,12 +69,10 @@ public class GcalEventWatcher implements Observer{
 	{
 		try
 		{
-			log.warn(this);
-			log.warn(m_eventTrackingService);
+			log.info(this +".init()");
+			
 			// start watching the events - only those generated on this server, not those from elsewhere
 			m_eventTrackingService.addLocalObserver(this);
-
-			log.info(this +".init()");
 		}
 		catch (Throwable t)
 		{
@@ -83,8 +82,9 @@ public class GcalEventWatcher implements Observer{
 	
 	@Override
 	public void update(Observable o, Object arg) {
-		if (!(arg instanceof Event))
+		if (!(arg instanceof Event)){
 			return;
+		}
 		Event event = (Event) arg;
 		String function = event.getEvent();
 		// After a site is duplicated we want to remove the gcalid property if present.
