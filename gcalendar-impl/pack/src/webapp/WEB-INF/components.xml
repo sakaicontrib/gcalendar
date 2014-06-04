@@ -18,5 +18,14 @@
         <property name="memoryService"><ref bean="org.sakaiproject.memory.api.MemoryService"/></property>
         
 	</bean>
+	
+ 	<bean id="gcalEventWatcher"
+		class="org.sakaiproject.gcalendar.impl.GcalEventWatcher"
+		init-method="init"
+		destroy-method="destroy"
+		singleton="true">
+    <property name="eventTrackingService"><ref bean="org.sakaiproject.event.api.EventTrackingService"/></property>
+    <property name="siteService"><ref bean="org.sakaiproject.site.api.SiteService"/></property>
+  </bean>
  	
 </beans>

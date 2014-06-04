@@ -5,6 +5,7 @@ gcalendar-api/api/src/java/org/sakaiproject/gcalendar/api/SakaiGCalendarServiceS
 gcalendar-api/api/src/java/org/sakaiproject/gcalendar/cover/SakaiGCalendarService.java -text
 gcalendar-bundles/pom.xml -text
 gcalendar-bundles/resources/gcalendar.properties -text
+gcalendar-impl/impl/src/java/org/sakaiproject/gcalendar/impl/GcalEventWatcher.java -text
 gcalendar-impl/impl/src/java/org/sakaiproject/gcalendar/impl/SakaiGCalendarEventImpl.java -text
 gcalendar-impl/impl/src/java/org/sakaiproject/gcalendar/impl/SakaiGCalendarImpl.java -text
 gcalendar-impl/impl/src/java/org/sakaiproject/gcalendar/impl/SakaiGCalendarServiceImpl.java -text
