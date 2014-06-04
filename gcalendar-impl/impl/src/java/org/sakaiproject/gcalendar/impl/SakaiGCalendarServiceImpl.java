@@ -217,17 +217,18 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 	@Override
 	public void contextCreated(String context, boolean toolPlacement) {
 
-		contextHelper(context, toolPlacement);
+		// Nothing done here.
+		// We tried using this method to store the Google calendar id in the site properties.
+		// But we found that we could not invoke "m_siteService.save(site)" to save the property
+		// as the site save operation was already in progress as this method is called.
 	}
 
 	@Override
 	public void contextUpdated(String context, boolean toolPlacement) {
 
-		contextHelper(context, toolPlacement);
+		// Nothing done here.
 	}
 	
-	private void contextHelper(String context, boolean toolPlacement ) {
-	}
 
 	@Override
 	public void contextDeleted(String context, boolean toolPlacement) {
