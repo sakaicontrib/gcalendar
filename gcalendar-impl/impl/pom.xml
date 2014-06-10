@@ -66,7 +66,7 @@
 		<dependency>
 			<groupId>org.sakaiproject.google</groupId>
 			<artifactId>sakai-google-auth-impl</artifactId>
-			<version>10.0-SNAPSHOT</version>
+			<version>9-SNAPSHOT</version>
 		</dependency>
 
 		<!--gcal -->
@@ -109,7 +109,7 @@
         <dependency>
             <groupId>org.sakaiproject.shortenedurl</groupId>
             <artifactId>shortenedurl-api</artifactId>
-            <version>11-SNAPSHOT</version>
+            <version>${sakai.shortenedurl.version}</version>
         </dependency>        
 		
 	</dependencies>
