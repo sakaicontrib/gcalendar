@@ -856,6 +856,12 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 		return site;
 	}
 	
+        @Override
+        public List getCalendars() {
+                // This method is not supported.
+                return null;
+        }
+
 	@Override
 	public CalendarEdit addCalendar(String ref) throws IdUsedException,
 			IdInvalidException, PermissionException {
