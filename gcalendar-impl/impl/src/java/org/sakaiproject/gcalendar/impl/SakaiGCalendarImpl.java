@@ -1,3 +1,21 @@
+/*
+* Licensed to The Apereo Foundation under one or more contributor license
+* agreements. See the NOTICE file distributed with this work for
+* additional information regarding copyright ownership.
+*
+* The Apereo Foundation licenses this file to you under the Educational 
+* Community License, Version 2.0 (the "License"); you may not use this file 
+* except in compliance with the License. You may obtain a copy of the 
+* License at:
+*
+* http://opensource.org/licenses/ecl2.txt
+* 
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
 package org.sakaiproject.gcalendar.impl;
 
 import java.io.IOException;
@@ -7,6 +25,8 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Stack;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -49,6 +69,8 @@ public class SakaiGCalendarImpl implements Calendar {
 	
 	/** Our logger. */
 	private static Log M_log = LogFactory.getLog(SakaiGCalendarImpl.class);
+	
+	private final static String FIND_GROUP_REGEX = "\\[.*\\]";
 	
 	/** Dependency: ServerConfigurationService */
 	protected ServerConfigurationService m_serverConfigurationService = (ServerConfigurationService)ComponentManager.get(ServerConfigurationService.class.getName());
@@ -647,7 +669,7 @@ public class SakaiGCalendarImpl implements Calendar {
 		}
 		// Update original event with new values
 		if (modifiedEvent.getGroups() == null){
-			originalEvent.setSummary(modifiedEvent.getDisplayName());
+			handleEventNameFormatting(originalEvent, modifiedEvent);
 		}
 		else{
 			StringBuilder sb = buildEventDisplayName(modifiedEvent.getDisplayName(), modifiedEvent.getGroups());
@@ -658,6 +680,29 @@ public class SakaiGCalendarImpl implements Calendar {
 		handleEventTimeDetails(modifiedEvent.getRange(), originalEvent);
 		
 		return originalEvent;
+	}
+
+	/**
+	 * When updating an event, group information is not passed in. So we have to see if group information
+	 * is already present in the event summary and preserve it along with any updates to the summary that may
+	 * have been passed in.
+	 * @param originalEvent
+	 * @param modifiedEvent
+	 */
+	private void handleEventNameFormatting(Event originalEvent, CalendarEventEdit modifiedEvent){
+		String origSummary = originalEvent.getSummary();
+		if (origSummary != null){
+			// Detect if group information present in the event summary.
+			Pattern pattern = Pattern.compile(FIND_GROUP_REGEX);
+			Matcher matcher = pattern.matcher(origSummary);
+			if (matcher.find()){ // Extract group information from event summary.
+				String groupsTxt = origSummary.substring(matcher.start(), matcher.end());
+				originalEvent.setSummary(modifiedEvent.getDisplayName() + " " + groupsTxt);
+			}
+			else{
+				originalEvent.setSummary(modifiedEvent.getDisplayName());
+			}
+		}
 	}
 	
 	@Override
@@ -696,6 +741,16 @@ public class SakaiGCalendarImpl implements Calendar {
 	public Element toXml(Document doc, Stack<Element> stack) {
 		// This method is not supported.
 		return null;
+	}
+	
+	/**
+	 * Checks if user has permission to modify any event (or fields) in this calendar
+	 * @param function
+	 * @return
+	 */
+	@Override
+	public boolean canModifyAnyEvent(String function){
+		return SakaiGCalendarServiceStaticVariables.SECURE_GCAL_EDIT.equals(function);
 	}
 
 }
