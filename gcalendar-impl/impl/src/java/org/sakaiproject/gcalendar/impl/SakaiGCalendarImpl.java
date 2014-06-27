@@ -72,6 +72,8 @@ public class SakaiGCalendarImpl implements Calendar {
 	
 	private final static String FIND_GROUP_REGEX = "\\[.*\\]";
 	
+	private final static Pattern pattern = Pattern.compile(FIND_GROUP_REGEX);
+	
 	/** Dependency: ServerConfigurationService */
 	protected ServerConfigurationService m_serverConfigurationService = (ServerConfigurationService)ComponentManager.get(ServerConfigurationService.class.getName());
 
@@ -692,8 +694,9 @@ public class SakaiGCalendarImpl implements Calendar {
 	private void handleEventNameFormatting(Event originalEvent, CalendarEventEdit modifiedEvent){
 		String origSummary = originalEvent.getSummary();
 		if (origSummary != null){
-			// Detect if group information present in the event summary.
-			Pattern pattern = Pattern.compile(FIND_GROUP_REGEX);
+			// Detect if group information present in the event summary. The pattern currently being used
+			// has limitations. If a user enters brackets "[ ]" as part of the event summary value, this 
+			// pattern will not accurately extract the group information.
 			Matcher matcher = pattern.matcher(origSummary);
 			if (matcher.find()){ // Extract group information from event summary.
 				String groupsTxt = origSummary.substring(matcher.start(), matcher.end());
