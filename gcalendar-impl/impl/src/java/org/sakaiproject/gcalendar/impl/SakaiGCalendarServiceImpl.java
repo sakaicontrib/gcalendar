@@ -319,7 +319,7 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 		try {
 			createdCalendar = client.calendars().insert(calendar).execute();
 		} catch (IOException e) {
-			M_log.warn( "createGoogleCalendar() failed. User may not have a valid google account: " + site.getCreatedBy().getEmail());
+			M_log.error( "createGoogleCalendar() failed. User may not have a valid google account: " + site.getCreatedBy().getEmail() + " or there may be problems communicating with Google " + e.getMessage());
 		}
 		
 		if ( createdCalendar == null )
@@ -856,11 +856,11 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 		return site;
 	}
 	
-        @Override
-        public List getCalendars() {
-                // This method is not supported.
-                return null;
-        }
+	@Override
+	public List getCalendars() {
+	        // This method is not supported.
+	        return null;
+	}
 
 	@Override
 	public CalendarEdit addCalendar(String ref) throws IdUsedException,
