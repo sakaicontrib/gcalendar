@@ -156,19 +156,22 @@ public class GCalendarAction extends PagedResourceActionII
 		boolean hasGoogleAccount = false;
 		String permission = null; // no default, we should not get this far if no permissions are set
 		
-		try {			
+		try {
+			User currentUser = UserDirectoryService.getCurrentUser();
 			site = SiteService.getSite(siteId);
 			String gcalid = site.getProperties().getProperty(SakaiGCalendarServiceStaticVariables.GCALID);
 			// If the gcalendar Id is not stored in the site properties, we need to create the calendar.
 			if (gcalid == null) {
-				gcalid = SakaiGCalendarService.enableCalendar(site);
+				// Only site creator should create the calendar.
+				if (currentUser.getEid().equals(site.getCreatedBy().getEid())){
+					gcalid = SakaiGCalendarService.enableCalendar(site);
+				}
 				// If the creation of the calendar fails  we go to the "no calendar" page.
 				if (gcalid == null){
 					return "_nocalendar";
 				}
 			}
 			
-			User currentUser = UserDirectoryService.getCurrentUser();
 	    	String currentUserId = currentUser.getId();
 	    	String siteServiceString = SiteService.siteReference(siteId);
 
