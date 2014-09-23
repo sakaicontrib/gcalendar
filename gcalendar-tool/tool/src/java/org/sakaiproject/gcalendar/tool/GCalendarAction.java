@@ -157,15 +157,13 @@ public class GCalendarAction extends PagedResourceActionII
 		String permission = null; // no default, we should not get this far if no permissions are set
 		
 		try {
-			User currentUser = UserDirectoryService.getCurrentUser();
-			String currentUserId = currentUser.getId();
 			site = SiteService.getSite(siteId);
 			String siteServiceString = SiteService.siteReference(siteId);
 			String gcalid = site.getProperties().getProperty(SakaiGCalendarServiceStaticVariables.GCALID);
 			// If the gcalendar Id is not stored in the site properties, we need to create the calendar.
 			if (gcalid == null) {
 				// Only users with update permission to site can create Google calendar and save gcal_id to site properties.
-				if (securityService.unlock(currentUserId, SakaiGCalendarServiceStaticVariables.SECURE_GCAL_EDIT, siteServiceString)){
+				if (securityService.unlock(SakaiGCalendarServiceStaticVariables.SECURE_GCAL_EDIT, siteServiceString)){
 					gcalid = SakaiGCalendarService.enableCalendar(site);
 				}
 				// If the creation of the calendar fails  we go to the "no calendar" page.
@@ -173,7 +171,8 @@ public class GCalendarAction extends PagedResourceActionII
 					return "_nocalendar";
 				}
 			}
-			
+			User currentUser = UserDirectoryService.getCurrentUser();
+			String currentUserId = currentUser.getId();
 			String emailAddress = currentUser.getEmail();
 	    	
 	    	// This is a hierarchical permission structure for Google Calendar permissions
