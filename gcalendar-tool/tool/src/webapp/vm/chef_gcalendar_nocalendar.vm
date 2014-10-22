@@ -5,7 +5,7 @@
 		#toolbar($menu)
 	#end	
 
- 	<font color="red">$tlang.getString("gcal.no.gcalid")</font>
+ 	<font color="red">${noCalendarAvailableMsg}</font>
 
 
 </div>

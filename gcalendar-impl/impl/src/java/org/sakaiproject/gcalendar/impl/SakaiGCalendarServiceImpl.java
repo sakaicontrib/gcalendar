@@ -275,15 +275,16 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 	 * 
 	 * @param Site to which a Google calendar will be added
 	 * @return String Google calendar Id
+	 * @throws IOException 
 	 */
-	public String enableCalendar(Site site){
+	public String enableCalendar(Site site) throws IOException{
 		com.google.api.services.calendar.model.Calendar siteGCalendar = null;
 		
 		Calendar client;
 		
 		GoogleCredential credential = getGoogleCredential(site.getCreatedBy().getEmail());
 		if (credential == null) {
-			return null; // user not authorized
+			throw new IOException("Problem creating Google Credential."); // user not authorized
 		}
 		
 		client = getGoogleClient( credential );
@@ -302,10 +303,11 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 	 * @param Site
 	 * @param client - the Calendar client
 	 * @return com.google.api.services.calendar.model.Calendar
+	 * @throws IOException 
 	 * 
 	 */
 
-	private com.google.api.services.calendar.model.Calendar createGoogleCalendar(Site site, Calendar client) {
+	private com.google.api.services.calendar.model.Calendar createGoogleCalendar(Site site, Calendar client) throws IOException {
 
 		String gcalID;
 		
@@ -320,6 +322,7 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 			createdCalendar = client.calendars().insert(calendar).execute();
 		} catch (IOException e) {
 			M_log.error( "createGoogleCalendar() failed. User may not have a valid google account: " + site.getCreatedBy().getEmail() + " or there may be problems communicating with Google " + e.getMessage());
+			throw e;
 		}
 		
 		if ( createdCalendar == null )

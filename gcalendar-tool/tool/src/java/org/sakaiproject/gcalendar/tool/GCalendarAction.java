@@ -21,6 +21,7 @@
 
 package org.sakaiproject.gcalendar.tool;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -155,6 +156,7 @@ public class GCalendarAction extends PagedResourceActionII
 		boolean gcalview = false;
 		boolean hasGoogleAccount = false;
 		String permission = null; // no default, we should not get this far if no permissions are set
+		String noCalendarAvailableMsg = null;
 		
 		try {
 			site = SiteService.getSite(siteId);
@@ -164,10 +166,22 @@ public class GCalendarAction extends PagedResourceActionII
 			if (gcalid == null) {
 				// Only users with update permission to site can create Google calendar and save gcal_id to site properties.
 				if (securityService.unlock(SakaiGCalendarServiceStaticVariables.SECURE_GCAL_EDIT, siteServiceString)){
-					gcalid = SakaiGCalendarService.enableCalendar(site);
+					try{
+						gcalid = SakaiGCalendarService.enableCalendar(site);
+					}
+					catch(IOException ioe){
+						// If there is a problem creating the calendar, set the appropriate message.
+						noCalendarAvailableMsg = rb.getString("gcal.error.creating.calendar");
+					}
 				}
-				// If the creation of the calendar fails  we go to the "no calendar" page.
+
+				// Navigate to nocalendar page if there is a problem creating the calendar or
+				// if no calendar has yet been created for this site.
 				if (gcalid == null){
+					if (noCalendarAvailableMsg == null){
+						noCalendarAvailableMsg = rb.getString("gcal.no.gcalid");
+					}
+					context.put("noCalendarAvailableMsg", noCalendarAvailableMsg);
 					return "_nocalendar";
 				}
 			}

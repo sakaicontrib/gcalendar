@@ -21,6 +21,8 @@
 
 package org.sakaiproject.gcalendar.cover;
 
+import java.io.IOException;
+
 import org.sakaiproject.component.cover.ComponentManager;
 import org.sakaiproject.site.api.Site;
 
@@ -91,8 +93,9 @@ public class SakaiGCalendarService    {
 	/**
 	 * Create a Google Calendar for the site
 	 * @param Site Sakai site
+	 * @throws IOException 
 	 */
-	public static String enableCalendar(Site site){
+	public static String enableCalendar(Site site) throws IOException{
 		org.sakaiproject.gcalendar.api.SakaiGCalendarService service = getInstance();
 		if (service == null) {
 			return null;

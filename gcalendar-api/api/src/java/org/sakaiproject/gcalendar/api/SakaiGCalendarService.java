@@ -20,6 +20,8 @@
  **********************************************************************************/
 package org.sakaiproject.gcalendar.api;
 
+import java.io.IOException;
+
 import org.sakaiproject.calendar.api.CalendarService;
 import org.sakaiproject.entity.api.EntityProducer;
 import org.sakaiproject.site.api.Site;
@@ -58,5 +60,5 @@ public interface SakaiGCalendarService extends EntityProducer, CalendarService {
 	 * Create a Google Calendar for the site
 	 * @param Site Sakai site
 	 */
-	public String enableCalendar(Site site);
+	public String enableCalendar(Site site) throws IOException;
 }
