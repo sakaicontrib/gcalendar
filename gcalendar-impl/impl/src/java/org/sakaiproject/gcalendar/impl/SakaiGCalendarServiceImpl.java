@@ -282,11 +282,11 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 		
 		Calendar client;
 		
-      String createdBy = site.getCreatedBy().getEmail();
+		String createdBy = site.getCreatedBy().getEmail();
 		GoogleCredential credential = getGoogleCredential(createdBy);
 		if (credential == null) {
-         // error logged in getGoogleCredential()
-			throw new IOException("Problem creating Google Credential (user not authorized)");
+			// error logged in getGoogleCredential()
+			throw new IOException("Problem creating Google Credential, user not authorized "+createdBy);
 		}
 		
 		client = getGoogleClient( credential );
