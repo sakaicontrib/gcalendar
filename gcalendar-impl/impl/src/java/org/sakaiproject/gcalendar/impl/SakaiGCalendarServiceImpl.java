@@ -155,7 +155,7 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 
 		} catch (Exception e) {
 			// return null if an exception occurs while communicating with Google.
-			M_log.error("Error creating a GoogleCredential object or requesting access token: " + e.getMessage());
+			M_log.error("Error creating a GoogleCredential object or requesting access token: " + userId + " " + e.getMessage());
 			return null;
 		}
 	}
@@ -282,9 +282,11 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 		
 		Calendar client;
 		
-		GoogleCredential credential = getGoogleCredential(site.getCreatedBy().getEmail());
+      String createdBy = site.getCreatedBy().getEmail();
+		GoogleCredential credential = getGoogleCredential(createdBy);
 		if (credential == null) {
-			throw new IOException("Problem creating Google Credential."); // user not authorized
+         // error logged in getGoogleCredential()
+			throw new IOException("Problem creating Google Credential (user not authorized)");
 		}
 		
 		client = getGoogleClient( credential );
@@ -321,7 +323,14 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 		try {
 			createdCalendar = client.calendars().insert(calendar).execute();
 		} catch (IOException e) {
-			M_log.error( "createGoogleCalendar() failed. User may not have a valid google account: " + site.getCreatedBy().getEmail() + " or there may be problems communicating with Google " + e.getMessage());
+         StringBuilder errMsg = new StringBuilder(); 
+			errMsg.append( "createGoogleCalendar() failed for site ");
+         errMsg.append( site.getId() );
+         errMsg.append( " - User may not have a valid google account: ");
+         errMsg.append( site.getCreatedBy().getEmail() );
+         errMsg.append( " - " );
+         errMsg.append( e.getMessage() );
+			M_log.error( errMsg.toString() );
 			throw e;
 		}
 		
@@ -354,7 +363,7 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 
 				AclRule rule = client.acl().insert(gcalID, ruleDefault).execute();
 				if ( rule == null )
-					M_log.error( "Setting Default Google Calendar ACL failed for Calendar ID: " + gcalID);
+					M_log.error( "Setting Default Google Calendar ACL failed for site: " + site.getId() + " - gCalID" + gcalID);
 			}	   
 		} catch (IOException e ){
 			// If the exception is a 404 - page not found, then that means that the permission is not set in Google
@@ -364,10 +373,10 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 				// okay to continue - Google does not have the permission set
 			} 
 			else {
-				M_log.error("Error setting the default Calendar ACL: " + e.getMessage());
+				M_log.error("Error setting the default Calendar ACL: " + site.getId() + " - " + e.getMessage());
 			}
 		} catch ( Exception eee) {
-			M_log.error("Setting default Calendar ACL: " + eee.getMessage());
+			M_log.error("Setting default Calendar ACL: "+ site.getId() + " - " + eee.getMessage());
 		}
 		
 		
@@ -393,7 +402,7 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 					//AclRule updatedDomain = client.acl().update(gcalID, ruleDefault.getId(), ruleDefault).execute();
 					AclRule rule = client.acl().insert(gcalID, ruleDefault).execute();
 					if ( null == rule || rule.isEmpty() ) {
-						M_log.error("Failed to update ACL for domain associated with Calendar ID:" + gcalID);
+						M_log.error("Failed to update ACL for site" + site.getId() + " - " + gcalID);
 					}
 				}
 				else {
@@ -408,10 +417,10 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 				// okay to continue - Google does not have the permission set
 			} 
 			else {
-				M_log.error("Error setting the domain Calendar ACL: " + e.getMessage());
+				M_log.error("Error setting the domain Calendar ACL for site " + site.getId() + " - " + e.getMessage());
 			}
 		} catch ( Exception eee ) {
-			M_log.error("Error setting the Google domain permissions:" + eee.getMessage());
+			M_log.error("Error setting the Google domain permissions for site " + site.getId() + " - " + eee.getMessage());
 		}
 		return createdCalendar;
 	}
@@ -472,7 +481,7 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 			// no email associated with the site owner results in the call to Google to fail.
 			if ( null == siteCreatorEmailAddress || siteCreatorEmailAddress.isEmpty() ) {
 				// TODO: error message to the user here?
-				M_log.error("Missing email address for site creator - unable to create google calender. Site " + site.getTitle() + " creator " + site.getCreatedBy().getSortName() );
+				M_log.error("Missing email address for site creator - unable to create google calender. Site " + site.getId() + " creator " + site.getCreatedBy().getSortName() );
 				return;
 			}
 			
@@ -480,7 +489,7 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 			GoogleCredential credential = getGoogleCredential(siteCreatorEmailAddress);
 			
 			if (credential == null) {
-				M_log.error("addUserToAccessControlList: bad credentials for " + siteCreatorEmailAddress);
+				M_log.error("addUserToAccessControlList: bad credentials for " + site.getId() + " creator " + siteCreatorEmailAddress);
 				return; // user not authorized
 			}
 
@@ -514,7 +523,7 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 			try {
 				AclRule createdRule = client.acl().insert(gcalid, rule).execute();
 			} catch (IOException e) {
-				M_log.error("addUserToAccessControlList - IOException: " + e.getMessage());
+				M_log.error("addUserToAccessControlList for site " + site.getId() + " " + e.getMessage());
 				return;
 			}
 			
@@ -545,14 +554,14 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 			try {
 				m_edit = m_preferencesService.add(userId);
 			} catch (Exception ee) {
-				M_log.error("getPreferencesEdit: " + e.getMessage());
+				M_log.error("getPreferencesEdit: " +userId + " " + e.getMessage());
 				return null;
 			}
 		} catch (InUseException e) {
-			M_log.error("getPreferencesEdit: " + e.getMessage());
+			M_log.error("getPreferencesEdit: " + userId + " " + e.getMessage());
 			return null;
 		} catch (PermissionException e) {
-			M_log.error("getPreferencesEdit: " + e.getMessage());
+			M_log.error("getPreferencesEdit: " + userId + " " + e.getMessage());
 			return null;
 		}
 		
@@ -829,9 +838,9 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 				// save the site
 				m_siteService.save(site);
 			} catch (IdUnusedException e) {
-				M_log.error("addGcalendarIdToSite: " + e.getMessage());
+				M_log.error("addGcalendarIdToSite: " + site.getId() + " " + e.getMessage());
 			} catch (Exception e) {
-				M_log.error("addGcalendarIdToSite: " + e.getMessage());
+				M_log.error("addGcalendarIdToSite: " + site.getId() + " " + e.getMessage());
 			}
 		}
 	}
@@ -843,7 +852,7 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 		try {
 			site = this.m_siteService.getSite(siteId);
 		} catch (IdUnusedException e) {
-			M_log.error("Error retrieving site information: " + e.getMessage());
+			M_log.error("Error retrieving site information: " + siteId + " " +  e.getMessage());
 		}
 		return site;
 	}
@@ -854,7 +863,7 @@ public class SakaiGCalendarServiceImpl implements SakaiGCalendarService, Context
 		try {
 			site = this.m_siteService.getSite(siteId);
 		} catch (IdUnusedException e) {
-			M_log.error("Error retrieving site information: " + e.getMessage());
+			M_log.error("Error retrieving site information: " + siteId + " " + e.getMessage());
 		}
 		return site;
 	}

@@ -160,7 +160,7 @@ public class SakaiGCalendarImpl implements Calendar {
 		// Retrieve gcalendar id from site properties
 		String gcalid = site.getProperties().getProperty(SakaiGCalendarServiceStaticVariables.GCALID);	
 		if (gcalid == null){
-			M_log.error("Calendar Id not found on site properties. Cannot retrieve events!!!");
+			M_log.error("Calendar Id not found on site properties for "+site.getId() );
 			return new ArrayList<CalendarEvent>();
 		}
 		
@@ -182,7 +182,7 @@ public class SakaiGCalendarImpl implements Calendar {
 			calendarEvents = client.events().list(gcalid).setTimeMin(start).setTimeMax(end).execute();
 			M_log.debug("Found " + calendarEvents.getItems().size() + " events for Google Calendar");
 		} catch (IOException e) {
-			M_log.error("Failed to query Google calendar for events." + e.getMessage());
+			M_log.error("Failed to query Google calendar for events for site " + site.getId() + " " + e.getMessage());
 		}
 
 		// Add Google calendar events to list
@@ -258,7 +258,7 @@ public class SakaiGCalendarImpl implements Calendar {
 			// Retrieve Google calendar id from site properties
 			String gcalid = site.getProperties().getProperty(SakaiGCalendarServiceStaticVariables.GCALID);	
 			if (gcalid == null){
-				M_log.error("Calendar Id not found on site properties. Cannot add event!!!");
+				M_log.error("Calendar Id not found on site properties for site " +site.getId() );
 				return null;
 			}
 			
@@ -272,7 +272,7 @@ public class SakaiGCalendarImpl implements Calendar {
 				
 				M_log.debug("Google Calendar Event Created:  " + createdEvent.getId());
 			} catch (IOException e) {
-				M_log.error("Error adding event to Google Calendar " + e.getMessage());
+				M_log.error("Error adding event to Google Calendar for site " + site.getId() + " " + e.getMessage());
 			}
 			// Map the values from the Google Calendar event to a Calendar Event
 			calEvent = createEventFromGoogleCalendarEvent(createdEvent);
@@ -364,9 +364,9 @@ public class SakaiGCalendarImpl implements Calendar {
 					client.events().update(site.getProperties().getProperty(SakaiGCalendarServiceStaticVariables.GCALID), gEvent.getId(), gEvent).execute();
 				}
 			} catch (IdUnusedException e) {
-				M_log.error("Cound not find event in Google calendar " + e.getMessage());
+				M_log.error("Cound not find assignment event in Google calendar " + site.getId() + " " + e.getMessage());
 			} catch (IOException e) {
-				M_log.error("Problem updating Google calendar event " + e.getMessage());
+				M_log.error("Problem updating Google calendar assignment event " + site.getId() + " " + e.getMessage());
 			}
 		}
 		else{
@@ -379,7 +379,7 @@ public class SakaiGCalendarImpl implements Calendar {
 					createdEvent = client.events().insert(site.getProperties().getProperty(SakaiGCalendarServiceStaticVariables.GCALID), gEvent).execute();
 					M_log.debug("Google Calendar Event Created:  " + createdEvent.getId());
 				} catch (IOException e) {
-					M_log.error("Problem inserting Google calendar event " + e.getMessage());
+					M_log.error("Problem inserting Google calendar event for site " + site.getId() + " " +e.getMessage());
 				}
 				
 				// Add the event id to the edit parameter so it is available to the calling class.
@@ -393,7 +393,7 @@ public class SakaiGCalendarImpl implements Calendar {
 					client.events().update(site.getProperties().getProperty(SakaiGCalendarServiceStaticVariables.GCALID), gEvent.getId(), gEvent).execute();
 					M_log.debug("Google Calendar Event Successfully updated:  " + edit.getId());
 				} catch (IOException e) {
-					M_log.error("Problem updating Google calendar event " + e.getMessage());
+					M_log.error("Problem updating Google calendar event for site " + site.getId() + " " + e.getMessage());
 				}
 			}
 		}
@@ -484,7 +484,7 @@ public class SakaiGCalendarImpl implements Calendar {
 			// Retrieve Google calendar id from site properties
 			String gcalid = site.getProperties().getProperty(SakaiGCalendarServiceStaticVariables.GCALID);	
 			if (gcalid == null){
-				M_log.error("Calendar Id not found on site properties. Cannot delete event!!!");
+				M_log.error(".removeEvent() failed. Calendar Id not found for site " + site.getId());
 				return;
 			}
 			
@@ -498,7 +498,7 @@ public class SakaiGCalendarImpl implements Calendar {
 					M_log.warn("Google calendar event was previously deleted.");
 				}
 				else{
-					M_log.error("Error deleting event from Google Calendar. " + e.getMessage());
+					M_log.error("Error deleting event from Google Calendar for site " + site.getId() + " " + e.getMessage());
 				}
 			}
 		}
@@ -563,7 +563,7 @@ public class SakaiGCalendarImpl implements Calendar {
 		// Retrieve Google calendar id from site properties
 		String gcalid = site.getProperties().getProperty(SakaiGCalendarServiceStaticVariables.GCALID);	
 		if (gcalid == null){
-			M_log.error("Calendar Id not found on site properties. Cannot add event!!!");
+			M_log.error(".getGoogleCalendarEvent() failed. Calendar Id not found for site " + site.getId() );
 			return null;
 		}
 
@@ -572,7 +572,7 @@ public class SakaiGCalendarImpl implements Calendar {
 		try {
 			event = client.events().get(gcalid, eventId).execute();
 		} catch (IOException e) {
-			M_log.error("Error retrieving event from Google Calendar. " + e.getMessage());
+			M_log.error(".getGoogleCalendarEvent() failed for site " + site.getId() + " " + e.getMessage());
 			if (e.getMessage().indexOf("404") != -1){
 				throw new IdUnusedException(eventId);
 			}
@@ -586,7 +586,7 @@ public class SakaiGCalendarImpl implements Calendar {
 		try {
 			site = this.m_siteService.getSite(siteId);
 		} catch (IdUnusedException e) {
-			M_log.error("Error retrieving site information: " + e.getMessage());
+			M_log.error(".getSite() failed for site " + siteId + " " + e.getMessage());
 		}
 		return site;
 	}

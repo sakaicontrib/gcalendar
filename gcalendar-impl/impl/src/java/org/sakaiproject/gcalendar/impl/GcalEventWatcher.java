@@ -102,9 +102,9 @@ public class GcalEventWatcher implements Observer{
 				m_siteService.save(site);
 					
 			} catch (IdUnusedException e) {
-				log.error("Problem retrieving site" + e.getMessage());
+				log.error("Problem retrieving site" + newSiteId + " " + e.getMessage());
 			} catch (PermissionException e) {
-				log.error("Permission problem saving site" + e.getMessage());
+				log.error("Permission problem saving site" + newSiteId + " " + e.getMessage());
 			}
 		}
 	}

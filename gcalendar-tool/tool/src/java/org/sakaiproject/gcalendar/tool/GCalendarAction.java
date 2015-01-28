@@ -262,13 +262,13 @@ public class GCalendarAction extends PagedResourceActionII
 					accessToken = SakaiGCalendarService.getGCalendarAccessToken(gcalid, emailAddress);
 				}
 				else { // no Google account or they are a super user
-					M_log.warn("buildDelegateAccessContext: " + "getGCalendar failed first try");
+					M_log.warn("buildDelegateAccessContext: getGCalendar failed first try");
 					// The user is not an authorized Google user (i.e. does not have a google email account in your service domain)
 					// Use the owner's email because the site creator is the owner in Google and will always have access to the calendar.
 					String ownerEmailId = site.getCreatedBy().getEmail();
 					accessToken = SakaiGCalendarService.getGCalendarAccessToken(gcalid, ownerEmailId);
 					if ( accessToken == null ) {
-						M_log.error("buildDelegateAccessContext: " + "getGCalendar failed second try with owner email id " + ownerEmailId );
+						M_log.error("buildDelegateAccessContext: getGCalendarAccessToken failed twice for site "+context+ " user " + ownerEmailId );
 						return "_noaccess";
 					}
 				}
