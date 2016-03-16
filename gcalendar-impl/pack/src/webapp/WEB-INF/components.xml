@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
-
-<beans>
+<beans xmlns="http://www.springframework.org/schema/beans"
+ 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+ 	xsi:schemaLocation="http://www.springframework.org/schema/beans
+ 			    http://www.springframework.org/schema/beans/spring-beans.xsd">
 
 	<bean id="org.sakaiproject.additional.calendar"
                         class="org.sakaiproject.gcalendar.impl.SakaiGCalendarServiceImpl"
                         init-method="init"
                         destroy-method="destroy"
-                        singleton="true">
+                        scope="singleton">
                         
         <property name="entityManager"><ref bean="org.sakaiproject.entity.api.EntityManager"/></property>
         <property name="siteService"><ref bean="org.sakaiproject.site.api.SiteService"/></property>
@@ -23,7 +24,7 @@
 		class="org.sakaiproject.gcalendar.impl.GcalEventWatcher"
 		init-method="init"
 		destroy-method="destroy"
-		singleton="true">
+		scope="singleton">
     <property name="eventTrackingService"><ref bean="org.sakaiproject.event.api.EventTrackingService"/></property>
     <property name="siteService"><ref bean="org.sakaiproject.site.api.SiteService"/></property>
   </bean>
