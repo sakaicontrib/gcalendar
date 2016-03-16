@@ -65,7 +65,6 @@ import org.sakaiproject.user.cover.UserDirectoryService;
 import org.sakaiproject.authz.api.AuthzGroup;
 import org.sakaiproject.authz.api.PermissionsHelper;
 import org.sakaiproject.authz.api.SecurityService;
-import org.sakaiproject.authz.cover.AuthzGroupService;
 import org.sakaiproject.authz.api.GroupNotDefinedException;
 import org.sakaiproject.component.cover.ComponentManager;
 import org.sakaiproject.exception.PermissionException;
